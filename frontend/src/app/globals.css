@@ -1,0 +1,47 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ivory: #faf7f2;
+  --color-sand: #f1ebe2;
+  --color-stone: #e7e0d5;
+  --color-line: #e2d9cc;
+  --color-ink: #1c1915;
+  --color-muted: #6f665a;
+  --color-cognac: #8a5634;
+  --color-sale: #a1372a;
+  --color-ok: #3e6a4d;
+  --color-warn: #a86b12;
+
+  --font-display: var(--font-cormorant), "Times New Roman", serif;
+  --font-sans: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+}
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  background: var(--color-ivory);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--color-stone);
+}
+
+@utility eyebrow {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+@utility focus-ring {
+  outline: none;
+  &:focus-visible {
+    box-shadow: 0 0 0 2px var(--color-ivory), 0 0 0 4px var(--color-ink);
+  }
+}

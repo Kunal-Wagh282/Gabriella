@@ -1,0 +1,109 @@
+name: gabriella
+
+x-api-env: &api-env
+  GABRIELLA_ENV: ${GABRIELLA_ENV:-dev}
+  LOG_LEVEL: ${LOG_LEVEL:-INFO}
+  LOG_JSON: ${LOG_JSON:-true}
+  DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-gabriella}:${POSTGRES_PASSWORD:-gabriella}@db:5432/${POSTGRES_DB:-gabriella}
+  TEST_DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-gabriella}:${POSTGRES_PASSWORD:-gabriella}@db:5432/gabriella_test
+  JWT_SECRET: ${JWT_SECRET:-dev-only-insecure-secret-change-me}
+  ACCESS_TOKEN_TTL_MINUTES: ${ACCESS_TOKEN_TTL_MINUTES:-15}
+  REFRESH_TOKEN_TTL_DAYS: ${REFRESH_TOKEN_TTL_DAYS:-14}
+  COOKIE_SECURE: ${COOKIE_SECURE:-false}
+  SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL:-admin@gabriella.example}
+  SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-gabriella-admin}
+  SEED_DEMO_EMAIL: ${SEED_DEMO_EMAIL:-demo@gabriella.example}
+  SEED_DEMO_PASSWORD: ${SEED_DEMO_PASSWORD:-gabriella-demo}
+  ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+  LLM_PROVIDER: ${LLM_PROVIDER:-auto}
+  GROQ_API_KEY: ${GROQ_API_KEY:-}
+  GROQ_MODEL: ${GROQ_MODEL:-llama-3.3-70b-versatile}
+  # Ollama runs on the host; Docker Desktop exposes it to containers here.
+  OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434/v1}
+  OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:7b}
+  LLM_BASE_URL: ${LLM_BASE_URL:-}
+  LLM_API_KEY: ${LLM_API_KEY:-}
+  LLM_MODEL: ${LLM_MODEL:-}
+  GABRIELLA_MODEL: ${GABRIELLA_MODEL:-claude-sonnet-5-5}
+  GABRIELLA_EFFORT: ${GABRIELLA_EFFORT:-low}
+  EMBEDDING_BACKEND: ${EMBEDDING_BACKEND:-clip}
+  REDIS_URL: redis://redis:6379/0
+
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-gabriella}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-gabriella}
+      POSTGRES_DB: ${POSTGRES_DB:-gabriella}
+    ports:
+      - "${DB_HOST_PORT:-5544}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/00-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-gabriella} -d ${POSTGRES_DB:-gabriella}"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "${REDIS_HOST_PORT:-6390}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build: ./backend
+    image: gabriella-backend:dev
+    environment: *api-env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"  # reach a host-side Ollama on Linux too
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "${API_HOST_PORT:-8010}:8000"
+    volumes:
+      - media:/app/media
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/healthz')"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  # Embeds new or changed products (CLIP text + image vectors). Waits for the API so the
+  # catalogue is seeded and images are rendered before it starts.
+  worker:
+    image: gabriella-backend:dev
+    entrypoint: []
+    command: ["arq", "app.workers.worker.WorkerSettings"]
+    environment: *api-env
+    depends_on:
+      api:
+        condition: service_healthy
+    volumes:
+      - media:/app/media
+
+  web:
+    build:
+      context: ./frontend
+      args:
+        API_INTERNAL_URL: http://api:8000
+    environment:
+      API_INTERNAL_URL: http://api:8000
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "${WEB_HOST_PORT:-3000}:3000"
+
+volumes:
+  pgdata:
+  media:
