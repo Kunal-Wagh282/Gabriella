@@ -26,6 +26,10 @@ class ChatSession(TimestampMixin, Base):
     context_product_id: Mapped[int | None] = mapped_column(
         ForeignKey("products.id", ondelete="SET NULL")
     )
+    # The shopper's own garment (photo) this conversation is styling around, if any.
+    context_upload_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("uploads.id", ondelete="SET NULL", use_alter=True)
+    )
     personalization_enabled: Mapped[bool] = mapped_column(
         Boolean, default=True, server_default="true"
     )

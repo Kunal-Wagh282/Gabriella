@@ -20,9 +20,27 @@ export interface ChatGroup {
   items: ChatItem[];
 }
 
+export interface GarmentAnalysis {
+  category: string;
+  category_name: string;
+  slot: string;
+  confidence: number;
+  colour: string;
+  colour_hex: string;
+  colour_family: string;
+  pattern: string;
+  label: string;
+}
+
+export interface UploadInfo {
+  url: string;
+  analysis: GarmentAnalysis;
+}
+
 export interface ChatMessage {
   id: number | string;
   role: "user" | "assistant";
+  upload?: UploadInfo | null;
   content: string;
   created_at: string | null;
   groups: ChatGroup[];
@@ -47,8 +65,12 @@ export interface ChatSession {
   constraints: Constraints;
   context_product: ProductSummary | null;
   mode: "llm" | "fallback";
-  /** e.g. "groq:llama-3.3-70b-versatile", "ollama:qwen2.5:7b" or "rule-based stylist" */
+  /** e.g. "groq:openai/gpt-oss-120b", "ollama:qwen2.5:7b" or "rule-based stylist" */
   model: string;
+  personalization_enabled: boolean;
+  /** True when a style profile from past orders is being used in this chat. */
+  personalized: boolean;
+  context_upload: UploadInfo | null;
   messages: ChatMessage[];
 }
 
@@ -65,7 +87,10 @@ export function getSession(id: string) {
   return api<ChatSession>(`/chat/sessions/${id}`);
 }
 
-export function updateSession(id: string, body: { store_id?: number | null; product?: string; clear_product?: boolean }) {
+export function updateSession(
+  id: string,
+  body: { store_id?: number | null; product?: string; clear_product?: boolean; personalization_enabled?: boolean },
+) {
   return api<ChatSession>(`/chat/sessions/${id}`, { method: "PATCH", body: JSON.stringify(body) });
 }
 
@@ -74,14 +99,13 @@ export async function sendMessage(
   sessionId: string,
   text: string,
   onEvent: (event: ChatEvent) => void,
-  signal?: AbortSignal,
+  uploadId?: string | null,
 ): Promise<void> {
   const res = await fetch(`/api/chat/sessions/${sessionId}/messages`, {
     method: "POST",
     credentials: "same-origin",
     headers: { "content-type": "application/json", accept: "text/event-stream" },
-    body: JSON.stringify({ text }),
-    signal,
+    body: JSON.stringify({ text, upload_id: uploadId ?? undefined }),
   });
   if (!res.ok || !res.body) {
     onEvent({ type: "error", message: res.status === 404 ? "This conversation has expired. Start a new one." : "Gabriella is unavailable right now." });
@@ -137,10 +161,27 @@ const PROVIDERS: Record<string, string> = {
   openai_compatible: "self-hosted",
 };
 
-/** "groq:llama-3.3-70b-versatile" -> "llama-3.3-70b-versatile on Groq". */
+/** "groq:openai/gpt-oss-120b" -> "openai/gpt-oss-120b on Groq". */
 export function describeModel(model: string): string {
   const [provider, ...rest] = model.split(":");
   const name = rest.join(":");
   if (!name) return model; // e.g. a Claude model id
   return `${name} on ${PROVIDERS[provider] ?? provider}`;
+}
+
+export interface UploadResult extends UploadInfo {
+  id: string;
+  note: string;
+}
+
+/** Sends a photo of the shopper's own garment for analysis. */
+export async function uploadImage(sessionId: string, file: File): Promise<UploadResult> {
+  const form = new FormData();
+  form.append("file", file);
+  const res = await fetch(`/api/chat/sessions/${sessionId}/uploads`, { method: "POST", body: form, credentials: "same-origin" });
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(body?.error?.message ?? "That photo could not be read");
+  }
+  return res.json();
 }

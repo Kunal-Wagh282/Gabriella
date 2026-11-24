@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from prometheus_fastapi_instrumentator import Instrumentator
 
-from app.api.routes import admin, auth, catalogue, chat, health
+from app.api.routes import admin, auth, catalogue, chat, commerce, health
 from app.core.config import get_settings
 from app.core.errors import install_error_handlers
 from app.core.logging import configure_logging, get_logger
@@ -82,7 +82,7 @@ def create_app() -> FastAPI:
     app.add_middleware(RequestContextMiddleware)
 
     app.include_router(health.router)
-    for router in (auth.router, catalogue.router, chat.router, admin.router):
+    for router in (auth.router, catalogue.router, chat.router, commerce.router, admin.router):
         app.include_router(router, prefix="/api")
 
     settings.media_root.mkdir(parents=True, exist_ok=True)

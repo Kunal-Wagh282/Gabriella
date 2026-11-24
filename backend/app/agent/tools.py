@@ -151,6 +151,28 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
         },
     },
     {
+        "name": "build_outfit",
+        "description": (
+            "Compose a complete in-stock outfit (top, bottom, shoes, optional accessory) with the "
+            "store's deterministic stylist: colour harmony, formality, occasion and the whole budget. "
+            "Optionally around a seed product. Returns the outfit plus in-stock alternatives per slot."
+        ),
+        "input_schema": {
+            "type": "object",
+            "additionalProperties": False,
+            "properties": {
+                "seed_product_id": {"type": "integer", "description": "Build around this product."},
+                "occasion": {"type": "string"},
+                "budget_max": {"type": "integer", "description": "Whole outfit, rupees."},
+                "gender": {"type": "string", "enum": ["men", "women"]},
+                "apparel_size": {"type": "string"},
+                "footwear_size": {"type": "string"},
+                "formality": {"type": "string", "enum": ["relaxed", "smart", "formal"]},
+                "colours": {"type": "array", "items": {"type": "string"}},
+            },
+        },
+    },
+    {
         "name": "present_recommendation",
         "description": (
             "Deliver your answer to the shopper. Always finish every turn by calling this exactly once, "
@@ -186,8 +208,10 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
                                     "properties": {
                                         "product_id": {"type": "integer"},
                                         "variant_id": {
-                                            "type": "integer",
-                                            "description": "Omit until the size is known.",
+                                            # null is allowed: open models send it instead of
+                                            # omitting the key, and Groq enforces the schema.
+                                            "type": ["integer", "null"],
+                                            "description": "Omit (or null) until the size is known; the server fills it in.",
                                         },
                                         "role": {
                                             "type": "string",
@@ -252,6 +276,12 @@ class ToolContext:
     stores: dict[str, Store]
     seen_product_ids: set[int] = field(default_factory=set)
     calls: list[dict[str, Any]] = field(default_factory=list)
+    # Per-slot candidates the rule-based stylist considered; pipeline mode shows them to the model.
+    shortlists: dict[str, list[int]] = field(default_factory=dict)
+    # Compact style profile, present only when personalisation is on for account and chat.
+    profile: dict[str, Any] | None = None
+    # The shopper's uploaded garment: {"analysis": {...}, "vector": [...], "url": "..."}.
+    upload: dict[str, Any] | None = None
 
     def store_for(self, code: str | None) -> Store | None:
         if code:
@@ -430,7 +460,60 @@ async def _inventory(ctx: ToolContext, args: CheckInventoryInput) -> dict[str, A
     }
 
 
+class BuildOutfitInput(BaseModel):
+    model_config = {"extra": "forbid"}
+
+    seed_product_id: int | None = None
+    occasion: str | None = None
+    budget_max: int | None = None
+    gender: str | None = None
+    apparel_size: str | None = None
+    footwear_size: str | None = None
+    formality: str | None = None
+    colours: list[str] = []
+
+
+async def _build_outfit_tool(ctx: ToolContext, args: BuildOutfitInput) -> dict[str, Any]:
+    from app.agent.fallback import _build_outfit  # local import: fallback depends on this module
+    from app.agent.schemas import SessionConstraints
+
+    constraints = SessionConstraints.model_validate(
+        {
+            k: v
+            for k, v in args.model_dump().items()
+            if k != "seed_product_id" and v not in (None, [])
+        }
+    )
+    focus = await ctx.session.get(Product, args.seed_product_id) if args.seed_product_id else None
+    if args.seed_product_id and focus is None:
+        raise ToolError(f"No product with id {args.seed_product_id}")
+    group, status = await _build_outfit(ctx, constraints, focus)
+    if group is None:
+        hint = {
+            "ask_gender": "Ask whether this is menswear or womenswear.",
+            "over_budget": "Nothing fits the budget; suggest raising it.",
+        }.get(status.split(":")[0], status)
+        return {"outfit": None, "status": status, "hint": hint}
+    ids = [i.product_id for i in group.items]
+    facts = {p["product_id"]: p for p in await compact_products(ctx.session, ids, ctx.store)}
+    alternatives = {
+        slot: await compact_products(
+            ctx.session, [pid for pid in pids if pid not in ids][:3], ctx.store
+        )
+        for slot, pids in ctx.shortlists.items()
+    }
+    return {
+        "outfit": [
+            {"role": i.role, "suggested_reason": i.reason, **facts.get(i.product_id, {})}
+            for i in group.items
+        ],
+        "total": sum(facts[i]["price"] for i in ids if i in facts),
+        "alternatives": alternatives,
+    }
+
+
 HANDLERS: dict[str, tuple[type[BaseModel], Any]] = {
+    "build_outfit": (BuildOutfitInput, _build_outfit_tool),
     "search_catalogue": (SearchCatalogueInput, _search),
     "get_product": (GetProductInput, _get_product),
     "find_similar_products": (FindSimilarInput, _similar),

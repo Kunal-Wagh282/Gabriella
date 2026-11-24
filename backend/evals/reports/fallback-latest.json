@@ -1,0 +1,787 @@
+{
+  "generated": "2026-11-23 20:04 UTC",
+  "mode": "fallback",
+  "model": "rule-based stylist",
+  "chat": {
+    "cases": [
+      {
+        "id": "dinner-budget",
+        "group": "outfit",
+        "passed": true,
+        "fails": [],
+        "items": 3,
+        "grounded": 3,
+        "stock_ok": 3,
+        "latency_ms": [
+          3425
+        ],
+        "answer": "Here's a dinner look under ₹6,000, all in stock at Pune in your sizes.",
+        "modes": [
+          "fallback"
+        ],
+        "strategies": [
+          null
+        ],
+        "tool_calls": 1,
+        "tool_errors": 0,
+        "model_requests": 0,
+        "tokens": 0,
+        "repairs": 0
+      },
+      {
+        "id": "office-men",
+        "group": "occasion",
+        "passed": true,
+        "fails": [],
+        "items": 4,
+        "grounded": 4,
+        "stock_ok": 4,
+        "latency_ms": [
+          320
+        ],
+        "answer": "Here's an office look, all in stock at Pune in your sizes.",
+        "modes": [
+          "fallback"
+        ],
+        "strategies": [
+          null
+        ],
+        "tool_calls": 1,
+        "tool_errors": 0,
+        "model_requests": 0,
+        "tokens": 0,
+        "repairs": 0
+      },
+      {
+        "id": "sangeet-women",
+        "group": "occasion",
+        "passed": true,
+        "fails": [],
+        "items": 4,
+        "grounded": 4,
+        "stock_ok": 4,
+        "latency_ms": [
+          210
+        ],
+        "answer": "Here's a wedding look under ₹12,000, all in stock at Pune in your sizes.",
+        "modes": [
+          "fallback"
+        ],
+        "strategies": [
+          null
+        ],
+        "tool_calls": 1,
+        "tool_errors": 0,
+        "model_requests": 0,
+        "tokens": 0,
+        "repairs": 0
+      },
+      {
+        "id": "party-women",
+        "group": "occasion",
+        "passed": true,
+        "fails": [],
+        "items": 4,
+        "grounded": 4,
+        "stock_ok": 4,
+        "latency_ms": [
+          230
+        ],
+        "answer": "Here's a party look under ₹9,000, all in stock at Pune in your sizes.",
+        "modes": [
+          "fallback"
+        ],
+        "strategies": [
+          null
+        ],
+        "tool_calls": 1,
+        "tool_errors": 0,
+        "model_requests": 0,
+        "tokens": 0,
+        "repairs": 0
+      },
+      {
+        "id": "travel-men",
+        "group": "occasion",
+        "passed": true,
+        "fails": [],
+        "items": 4,
+        "grounded": 4,
+        "stock_ok": 4,
+        "latency_ms": [
+          230
+        ],
+        "answer": "Here's a travel look, all in stock at Pune in your sizes.",
+        "modes": [
+          "fallback"
+        ],
+        "strategies": [
+          null
+        ],
+        "tool_calls": 1,
+        "tool_errors": 0,
+        "model_requests": 0,
+        "tokens": 0,
+        "repairs": 0
+      },
+      {
+        "id": "navy-office",
+        "group": "outfit",
+        "passed": true,
+        "fails": [],
+        "items": 4,
+        "grounded": 4,
+        "stock_ok": 4,
+        "latency_ms": [
+          254
+        ],
+        "answer": "Here's an office look, all in stock at Pune in your sizes.",
+        "modes": [
+          "fallback"
+        ],
+        "strategies": [
+          null
+        ],
+        "tool_calls": 1,
+        "tool_errors": 0,
+        "model_requests": 0,
+        "tokens": 0,
+        "repairs": 0
+      },
+      {
+        "id": "budget-impossible",
+        "group": "no-result",
+        "passed": true,
+        "fails": [],
+        "items": 0,
+        "grounded": 0,
+        "stock_ok": 0,
+        "latency_ms": [
+          259
+        ],
+        "answer": "I couldn't fit a full outfit in stock at Pune within ₹2,000. The most affordable complete look here comes to about ₹7,097.",
+        "modes": [
+          "fallback"
+        ],
+        "strategies": [
+          null
+        ],
+        "tool_calls": 1,
+        "tool_errors": 0,
+        "model_requests": 0,
+        "tokens": 0,
+        "repairs": 0
+      },
+      {
+        "id": "ask-gender",
+        "group": "clarify",
+        "passed": true,
+        "fails": [],
+        "items": 0,
+        "grounded": 0,
+        "stock_ok": 0,
+        "latency_ms": [
+          33
+        ],
+        "answer": "Happy to put a look together. Are you shopping for menswear or womenswear?",
+        "modes": [
+          "fallback"
+        ],
+        "strategies": [
+          null
+        ],
+        "tool_calls": 1,
+        "tool_errors": 0,
+        "model_requests": 0,
+        "tokens": 0,
+        "repairs": 0
+      },
+      {
+        "id": "less-formal",
+        "group": "refine",
+        "passed": true,
+        "fails": [],
+        "items": 4,
+        "grounded": 4,
+        "stock_ok": 4,
+        "latency_ms": [
+          234,
+          216
+        ],
+        "answer": "Here's an office look, all in stock at Pune in your sizes.",
+        "modes": [
+          "fallback",
+          "fallback"
+        ],
+        "strategies": [
+          null,
+          null
+        ],
+        "tool_calls": 2,
+        "tool_errors": 0,
+        "model_requests": 0,
+        "tokens": 0,
+        "repairs": 0
+      },
+      {
+        "id": "refine-budget",
+        "group": "refine",
+        "passed": true,
+        "fails": [],
+        "items": 3,
+        "grounded": 3,
+        "stock_ok": 3,
+        "latency_ms": [
+          184,
+          192
+        ],
+        "answer": "Here's an office look under ₹7,000, all in stock at Pune in your sizes.",
+        "modes": [
+          "fallback",
+          "fallback"
+        ],
+        "strategies": [
+          null,
+          null
+        ],
+        "tool_calls": 2,
+        "tool_errors": 0,
+        "model_requests": 0,
+        "tokens": 0,
+        "repairs": 0
+      },
+      {
+        "id": "start-fresh",
+        "group": "refine",
+        "passed": true,
+        "fails": [],
+        "items": 0,
+        "grounded": 0,
+        "stock_ok": 0,
+        "latency_ms": [
+          273,
+          24
+        ],
+        "answer": "Fresh start. What are you shopping for today?",
+        "modes": [
+          "fallback",
+          "fallback"
+        ],
+        "strategies": [
+          null,
+          null
+        ],
+        "tool_calls": 2,
+        "tool_errors": 0,
+        "model_requests": 0,
+        "tokens": 0,
+        "repairs": 0
+      },
+      {
+        "id": "white-sneakers",
+        "group": "search",
+        "passed": true,
+        "fails": [],
+        "items": 1,
+        "grounded": 1,
+        "stock_ok": 1,
+        "latency_ms": [
+          101
+        ],
+        "answer": "Here's what I found in stock at Pune.",
+        "modes": [
+          "fallback"
+        ],
+        "strategies": [
+          null
+        ],
+        "tool_calls": 1,
+        "tool_errors": 0,
+        "model_requests": 0,
+        "tokens": 0,
+        "repairs": 0
+      },
+      {
+        "id": "black-dress-sale",
+        "group": "search",
+        "passed": true,
+        "fails": [],
+        "items": 3,
+        "grounded": 3,
+        "stock_ok": 3,
+        "latency_ms": [
+          144
+        ],
+        "answer": "Nothing matching is on sale right now, so here are full-price options in stock at Pune.",
+        "modes": [
+          "fallback"
+        ],
+        "strategies": [
+          null
+        ],
+        "tool_calls": 1,
+        "tool_errors": 0,
+        "model_requests": 0,
+        "tokens": 0,
+        "repairs": 0
+      },
+      {
+        "id": "kurta-budget",
+        "group": "search",
+        "passed": true,
+        "fails": [],
+        "items": 2,
+        "grounded": 2,
+        "stock_ok": 2,
+        "latency_ms": [
+          85
+        ],
+        "answer": "Here's what I found in stock at Pune.",
+        "modes": [
+          "fallback"
+        ],
+        "strategies": [
+          null
+        ],
+        "tool_calls": 1,
+        "tool_errors": 0,
+        "model_requests": 0,
+        "tokens": 0,
+        "repairs": 0
+      },
+      {
+        "id": "linen-shirt-L",
+        "group": "search",
+        "passed": true,
+        "fails": [],
+        "items": 6,
+        "grounded": 6,
+        "stock_ok": 6,
+        "latency_ms": [
+          108
+        ],
+        "answer": "Here's what I found in stock at Pune.",
+        "modes": [
+          "fallback"
+        ],
+        "strategies": [
+          null
+        ],
+        "tool_calls": 1,
+        "tool_errors": 0,
+        "model_requests": 0,
+        "tokens": 0,
+        "repairs": 0
+      },
+      {
+        "id": "mumbai-stock",
+        "group": "stock",
+        "passed": true,
+        "fails": [],
+        "items": 1,
+        "grounded": 1,
+        "stock_ok": 1,
+        "latency_ms": [
+          126
+        ],
+        "answer": "Here's what I found. None are in stock at Mumbai, but other stores have them.",
+        "modes": [
+          "fallback"
+        ],
+        "strategies": [
+          null
+        ],
+        "tool_calls": 1,
+        "tool_errors": 1,
+        "model_requests": 0,
+        "tokens": 0,
+        "repairs": 1
+      },
+      {
+        "id": "similar-chinos-M",
+        "group": "similar",
+        "passed": true,
+        "fails": [],
+        "items": 6,
+        "grounded": 6,
+        "stock_ok": 6,
+        "latency_ms": [
+          124
+        ],
+        "answer": "Here are pieces close to the straight chinos that are in stock at Pune.",
+        "modes": [
+          "fallback"
+        ],
+        "strategies": [
+          null
+        ],
+        "tool_calls": 1,
+        "tool_errors": 0,
+        "model_requests": 0,
+        "tokens": 0,
+        "repairs": 0
+      },
+      {
+        "id": "availability-sold-out",
+        "group": "stock",
+        "passed": true,
+        "fails": [],
+        "items": 4,
+        "grounded": 4,
+        "stock_ok": 4,
+        "latency_ms": [
+          77
+        ],
+        "answer": "The relaxed garment-dyed cotton chinos in M is sold out at Pune, but Bengaluru, Mumbai, Online have it. These are close alternatives you can buy here today.",
+        "modes": [
+          "fallback"
+        ],
+        "strategies": [
+          null
+        ],
+        "tool_calls": 1,
+        "tool_errors": 0,
+        "model_requests": 0,
+        "tokens": 0,
+        "repairs": 0
+      },
+      {
+        "id": "style-product",
+        "group": "outfit",
+        "passed": true,
+        "fails": [],
+        "items": 4,
+        "grounded": 4,
+        "stock_ok": 4,
+        "latency_ms": [
+          137
+        ],
+        "answer": "Here's an office look, all in stock at Pune in your sizes.",
+        "modes": [
+          "fallback"
+        ],
+        "strategies": [
+          null
+        ],
+        "tool_calls": 1,
+        "tool_errors": 0,
+        "model_requests": 0,
+        "tokens": 0,
+        "repairs": 0
+      },
+      {
+        "id": "impossible-filters",
+        "group": "no-result",
+        "passed": true,
+        "fails": [],
+        "items": 0,
+        "grounded": 0,
+        "stock_ok": 0,
+        "latency_ms": [
+          94
+        ],
+        "answer": "I couldn't find anything matching that. Could you describe it differently?",
+        "modes": [
+          "fallback"
+        ],
+        "strategies": [
+          null
+        ],
+        "tool_calls": 1,
+        "tool_errors": 0,
+        "model_requests": 0,
+        "tokens": 0,
+        "repairs": 0
+      },
+      {
+        "id": "off-topic",
+        "group": "no-result",
+        "passed": true,
+        "fails": [],
+        "items": 0,
+        "grounded": 0,
+        "stock_ok": 0,
+        "latency_ms": [
+          99
+        ],
+        "answer": "I'm Gabriella, the stylist here, so I can only help with clothes from our store. What are you shopping for?",
+        "modes": [
+          "fallback"
+        ],
+        "strategies": [
+          null
+        ],
+        "tool_calls": 1,
+        "tool_errors": 0,
+        "model_requests": 0,
+        "tokens": 0,
+        "repairs": 0
+      },
+      {
+        "id": "personal-picks",
+        "group": "personalisation",
+        "passed": true,
+        "fails": [],
+        "items": 6,
+        "grounded": 6,
+        "stock_ok": 6,
+        "latency_ms": [
+          119
+        ],
+        "answer": "Based on what you've bought before, here are new pieces in your usual sizes.",
+        "modes": [
+          "fallback"
+        ],
+        "strategies": [
+          null
+        ],
+        "tool_calls": 1,
+        "tool_errors": 0,
+        "model_requests": 0,
+        "tokens": 0,
+        "repairs": 0
+      },
+      {
+        "id": "personal-off",
+        "group": "personalisation",
+        "passed": true,
+        "fails": [],
+        "items": 0,
+        "grounded": 0,
+        "stock_ok": 0,
+        "latency_ms": [
+          78
+        ],
+        "answer": "I'm Gabriella, the stylist here, so I can only help with clothes from our store. What are you shopping for?",
+        "modes": [
+          "fallback"
+        ],
+        "strategies": [
+          null
+        ],
+        "tool_calls": 1,
+        "tool_errors": 0,
+        "model_requests": 0,
+        "tokens": 0,
+        "repairs": 0
+      },
+      {
+        "id": "photo-shirt-outfit",
+        "group": "image",
+        "passed": true,
+        "fails": [],
+        "items": 3,
+        "grounded": 3,
+        "stock_ok": 3,
+        "latency_ms": [
+          247
+        ],
+        "answer": "Here's a versatile look, all in stock at Pune in your sizes.",
+        "modes": [
+          "fallback"
+        ],
+        "strategies": [
+          null
+        ],
+        "tool_calls": 1,
+        "tool_errors": 0,
+        "model_requests": 0,
+        "tokens": 0,
+        "repairs": 0
+      },
+      {
+        "id": "photo-sneaker-similar",
+        "group": "image",
+        "passed": true,
+        "fails": [],
+        "items": 6,
+        "grounded": 6,
+        "stock_ok": 6,
+        "latency_ms": [
+          51
+        ],
+        "answer": "These look closest to your light grey sneaker, in stock at Pune.",
+        "modes": [
+          "fallback"
+        ],
+        "strategies": [
+          null
+        ],
+        "tool_calls": 1,
+        "tool_errors": 0,
+        "model_requests": 0,
+        "tokens": 0,
+        "repairs": 0
+      },
+      {
+        "id": "photo-dress-shoes",
+        "group": "image",
+        "passed": true,
+        "fails": [],
+        "items": 2,
+        "grounded": 2,
+        "stock_ok": 2,
+        "latency_ms": [
+          119
+        ],
+        "answer": "Here's a versatile look, all in stock at Pune in your sizes.",
+        "modes": [
+          "fallback"
+        ],
+        "strategies": [
+          null
+        ],
+        "tool_calls": 1,
+        "tool_errors": 0,
+        "model_requests": 0,
+        "tokens": 0,
+        "repairs": 0
+      }
+    ],
+    "summary": {
+      "cases": 26,
+      "passed": 26,
+      "pass_rate": 100.0,
+      "items_shown": 74,
+      "grounded_rate": 100.0,
+      "stock_valid_rate": 100.0,
+      "no_result_rate": 23.1,
+      "turn_latency_p50_ms": 137,
+      "turn_latency_p95_ms": 320,
+      "model_answered_rate": 0.0,
+      "tool_calls": 29,
+      "tool_call_success_rate": 96.6,
+      "server_repairs": 1,
+      "tokens": 0,
+      "by_group": {
+        "clarify": "1/1",
+        "image": "3/3",
+        "no-result": "3/3",
+        "occasion": "4/4",
+        "outfit": "3/3",
+        "personalisation": "2/2",
+        "refine": "3/3",
+        "search": "4/4",
+        "similar": "1/1",
+        "stock": "2/2"
+      }
+    }
+  },
+  "retrieval": {
+    "queries": [
+      {
+        "query": "beige chinos",
+        "hybrid_p_at_5": 0.6,
+        "lexical_p_at_5": 0.6,
+        "latency_ms": 25.6
+      },
+      {
+        "query": "denim jacket",
+        "hybrid_p_at_5": 1.0,
+        "lexical_p_at_5": 1.0,
+        "latency_ms": 59.4
+      },
+      {
+        "query": "office shoes for men",
+        "hybrid_p_at_5": 1.0,
+        "lexical_p_at_5": 1.0,
+        "latency_ms": 75.5
+      },
+      {
+        "query": "cosy winter layer",
+        "hybrid_p_at_5": 1.0,
+        "lexical_p_at_5": 0.0,
+        "latency_ms": 61.0
+      },
+      {
+        "query": "light summer shirt",
+        "hybrid_p_at_5": 1.0,
+        "lexical_p_at_5": 1.0,
+        "latency_ms": 45.2
+      },
+      {
+        "query": "black party dress",
+        "hybrid_p_at_5": 0.6,
+        "lexical_p_at_5": 0.6,
+        "latency_ms": 37.8
+      },
+      {
+        "query": "outfit for a sangeet",
+        "hybrid_p_at_5": 1.0,
+        "lexical_p_at_5": 1.0,
+        "latency_ms": 53.8
+      },
+      {
+        "query": "white sneakers",
+        "hybrid_p_at_5": 0.6,
+        "lexical_p_at_5": 0.6,
+        "latency_ms": 23.0
+      },
+      {
+        "query": "formal trousers",
+        "hybrid_p_at_5": 1.0,
+        "lexical_p_at_5": 1.0,
+        "latency_ms": 39.1
+      },
+      {
+        "query": "leather belt",
+        "hybrid_p_at_5": 1.0,
+        "lexical_p_at_5": 1.0,
+        "latency_ms": 39.8
+      },
+      {
+        "query": "something to wear to a beach holiday",
+        "hybrid_p_at_5": 1.0,
+        "lexical_p_at_5": 1.0,
+        "latency_ms": 54.3
+      },
+      {
+        "query": "smart office blazer",
+        "hybrid_p_at_5": 1.0,
+        "lexical_p_at_5": 1.0,
+        "latency_ms": 40.4
+      },
+      {
+        "query": "ethnic footwear for a wedding",
+        "hybrid_p_at_5": 1.0,
+        "lexical_p_at_5": 1.0,
+        "latency_ms": 52.5
+      },
+      {
+        "query": "warm hoodie",
+        "hybrid_p_at_5": 1.0,
+        "lexical_p_at_5": 1.0,
+        "latency_ms": 41.7
+      }
+    ],
+    "summary": {
+      "hybrid_precision_at_5": 0.914,
+      "lexical_only_precision_at_5": 0.843,
+      "retrieval_latency_p50_ms": 45.2,
+      "retrieval_latency_p95_ms": 75.5
+    }
+  },
+  "image": {
+    "summary": {
+      "images": 60,
+      "outfit_slot_accuracy": 96.7,
+      "category_accuracy": 75.0,
+      "colour_family_accuracy": 60.0,
+      "visual_neighbours_same_category": 79.3
+    },
+    "slot_confusions": {
+      "sandals -> caps": 1,
+      "jackets -> formal-shirts": 1
+    },
+    "category_confusions": {
+      "casual-shirts -> formal-shirts": 4,
+      "polos -> formal-shirts": 2,
+      "casual-shirts -> kurtas": 2,
+      "chinos -> trousers": 1,
+      "blouses-tops -> formal-shirts": 1,
+      "shorts -> trousers": 1,
+      "blouses-tops -> t-shirts": 1,
+      "sandals -> caps": 1
+    }
+  }
+}

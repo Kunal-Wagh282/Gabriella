@@ -1,10 +1,11 @@
 "use client";
 
-import { Check, ChevronDown, MapPin, Search, User as UserIcon } from "lucide-react";
+import { Check, ChevronDown, MapPin, Search, ShoppingBag, User as UserIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 
+import { useCart } from "@/lib/commerce";
 import { cn } from "@/lib/format";
 import { useLogout, useMe, useSelectStore, useStores } from "@/lib/hooks";
 import { useStoreId } from "@/lib/store";
@@ -106,12 +107,30 @@ function AccountMenu() {
           <Link href="/account" onClick={() => setOpen(false)} className="block px-4 py-2 hover:bg-sand">
             Account & preferences
           </Link>
+          <Link href="/orders" onClick={() => setOpen(false)} className="block px-4 py-2 hover:bg-sand">
+            Orders
+          </Link>
           <button onClick={() => logout.mutate()} className="block w-full px-4 py-2 text-left hover:bg-sand">
             Sign out
           </button>
         </div>
       )}
     </div>
+  );
+}
+
+function BagLink() {
+  const { data: cart } = useCart();
+  const count = cart?.item_count ?? 0;
+  return (
+    <Link href="/bag" className="focus-ring relative" aria-label={`Bag, ${count} items`}>
+      <ShoppingBag className="size-5" strokeWidth={1.5} />
+      {count > 0 && (
+        <span className="absolute -right-2 -top-1.5 grid size-4 place-items-center rounded-full bg-ink text-[9px] font-semibold text-ivory">
+          {count}
+        </span>
+      )}
+    </Link>
   );
 }
 
@@ -157,6 +176,7 @@ export function SiteHeader() {
         <div className="ml-auto flex items-center gap-5 md:ml-0">
           <StorePicker />
           <AccountMenu />
+          <BagLink />
         </div>
       </div>
       <div className="flex gap-4 overflow-x-auto px-4 pb-3 text-[13px] lg:hidden">

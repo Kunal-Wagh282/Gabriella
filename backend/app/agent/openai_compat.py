@@ -7,12 +7,14 @@ calls, so parsing is lenient: nested JSON passed as strings is decoded, malforme
 are handed back for the validator to reject, and Groq's `tool_use_failed` errors are retried.
 """
 
+import asyncio
 import json
 import uuid
 from types import SimpleNamespace
 from typing import Any
 
 from app.agent.llm import ModelTurn, Usage
+from app.core.config import get_settings
 from app.core.logging import get_logger
 
 log = get_logger("gabriella.llm")
@@ -25,6 +27,7 @@ FINISH_REASONS = {
     "content_filter": "refusal",
 }
 MAX_TOOL_FORMAT_RETRIES = 2
+MAX_RETRY_WAIT_SECONDS = 6
 
 
 def to_openai_tools(tools: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -167,8 +170,9 @@ class OpenAICompatibleBackend:
         self.name = f"{provider}:{model}"
         self._max_tokens = max_tokens
         self._temperature = temperature
+        # Retries are handled below: a shopper should never wait out a long rate-limit window.
         self._client = AsyncOpenAI(
-            base_url=base_url, api_key=api_key, timeout=timeout, max_retries=2
+            base_url=base_url, api_key=api_key, timeout=timeout, max_retries=0
         )
 
     async def complete(
@@ -176,20 +180,53 @@ class OpenAICompatibleBackend:
     ) -> ModelTurn:
         import openai
 
-        request = {
+        request: dict[str, Any] = {
             "model": self.model,
             "messages": to_openai_messages(system, messages),
             "tools": to_openai_tools(tools),
-            "tool_choice": "auto",
+            # With a single tool (pipeline mode) the answer must come through it.
+            "tool_choice": "required" if len(tools) == 1 else "auto",
             "max_tokens": self._max_tokens,
             "temperature": self._temperature,
         }
-        for attempt in range(MAX_TOOL_FORMAT_RETRIES + 1):
+        if "gpt-oss" in self.model:
+            # Medium measurably reduces missed tool calls on gpt-oss for ~250 extra tokens.
+            request["reasoning_effort"] = get_settings().llm_reasoning_effort
+        format_retries = 0
+        rate_retries = 0
+        while True:
             try:
                 return from_openai_response(await self._client.chat.completions.create(**request))
             except openai.BadRequestError as exc:
                 # Groq rejects generations whose tool call it can't parse; a fresh sample usually works.
-                if "tool_use_failed" not in str(exc) or attempt == MAX_TOOL_FORMAT_RETRIES:
+                retryable = "tool_use_failed" in str(exc) or "did not call a tool" in str(exc)
+                if not retryable or format_retries >= MAX_TOOL_FORMAT_RETRIES:
                     raise
-                log.warning("tool_call_format_retry", provider=self.provider, attempt=attempt + 1)
-        raise RuntimeError("unreachable")
+                format_retries += 1
+                log.warning(
+                    "tool_call_format_retry", provider=self.provider, attempt=format_retries
+                )
+            except (
+                openai.RateLimitError,
+                openai.APIConnectionError,
+                openai.InternalServerError,
+            ) as exc:
+                wait = _retry_after(exc)
+                if rate_retries >= 1 or wait is None or wait > MAX_RETRY_WAIT_SECONDS:
+                    raise  # callers fall back to the validated rule-based answer
+                rate_retries += 1
+                log.warning(
+                    "model_retry", provider=self.provider, wait_s=wait, error=type(exc).__name__
+                )
+                await asyncio.sleep(wait)
+
+
+def _retry_after(exc: Exception) -> float | None:
+    """Seconds to wait before one retry, or None if retrying isn't sensible."""
+    response = getattr(exc, "response", None)
+    if response is None:
+        return 1.0  # connection blip
+    try:
+        return float(response.headers.get("retry-after", "1"))
+    except ValueError:
+        return None

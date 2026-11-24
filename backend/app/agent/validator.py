@@ -179,10 +179,21 @@ async def validate(
     return report
 
 
+def owned_product_ids(profile: dict | None) -> set[int]:
+    """Products the shopper bought recently or returned: never suggest these again."""
+    profile = profile or {}
+    return set(profile.get("recent_product_ids", [])) | set(profile.get("returned_product_ids", []))
+
+
 async def repair(
-    session: AsyncSession, report: ValidationReport, *, store: Store | None
+    session: AsyncSession,
+    report: ValidationReport,
+    *,
+    store: Store | None,
+    avoid: set[int] | None = None,
 ) -> tuple[Recommendation, list[str]]:
-    """Make a recommendation displayable: swap or drop invalid items, then enforce budgets."""
+    """Make a recommendation displayable: swap or drop invalid items, then enforce budgets.
+    Replacements never come from `avoid` (e.g. what the shopper already owns)."""
     rec = report.recommendation
     assert rec is not None
     notes: list[str] = []
@@ -190,7 +201,7 @@ async def repair(
 
     for gi, group in enumerate(rec.groups):
         kept: list[RecommendedItem] = []
-        used = {i.product_id for i in group.items}
+        used = {i.product_id for i in group.items} | (avoid or set())
         for ii, item in enumerate(group.items):
             if (gi, ii) not in report.invalid:
                 kept.append(item)

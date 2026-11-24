@@ -45,6 +45,12 @@ from app.main import app  # noqa: E402
 BACKEND = Path(__file__).resolve().parents[1]
 TABLES = [
     "agent_traces",
+    "uploads",
+    "customer_style_profiles",
+    "order_items",
+    "orders",
+    "cart_items",
+    "carts",
     "chat_messages",
     "chat_sessions",
     "inventory_movements",

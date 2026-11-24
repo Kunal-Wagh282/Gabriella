@@ -1,10 +1,11 @@
 "use client";
 
-import { MessageCircle, ShoppingBag } from "lucide-react";
+import { Check, MessageCircle, ShoppingBag } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
 import { Button } from "@/components/ui";
+import { errorMessage, useAddToCart } from "@/lib/commerce";
 import { cn, stockLabel } from "@/lib/format";
 import type { Store, Variant } from "@/lib/types";
 
@@ -22,6 +23,16 @@ export function PurchasePanel({
   const [variantId, setVariantId] = useState<number | null>(null);
   const variant = variants.find((v) => v.id === variantId) ?? null;
   const store = stores.find((s) => s.id === selectedStoreId) ?? null;
+  const add = useAddToCart();
+  // Buy from the selected store when it has the size, otherwise from the online store.
+  const online = stores.find((s) => s.is_online) ?? null;
+  const fulfilFrom = (v: Variant): Store | null => {
+    const at = (id: number | undefined) => v.stock.find((x) => x.store_id === id)?.on_hand ?? 0;
+    if (store && at(store.id) > 0) return store;
+    if (online && at(online.id) > 0) return online;
+    return null;
+  };
+  const source = variant ? fulfilFrom(variant) : null;
   const qtyHere = (v: Variant) =>
     selectedStoreId === null ? v.stock.reduce((n, s) => n + s.on_hand, 0) : (v.available_at_selected_store ?? 0);
 
@@ -39,7 +50,10 @@ export function PurchasePanel({
               <button
                 key={v.id}
                 type="button"
-                onClick={() => setVariantId(v.id)}
+                onClick={() => {
+                  setVariantId(v.id);
+                  add.reset();
+                }}
                 aria-pressed={variantId === v.id}
                 aria-label={`Size ${v.size}${qty === 0 ? ", sold out" : qty <= 3 ? `, only ${qty} left` : ""}`}
                 className={cn(
@@ -87,9 +101,27 @@ export function PurchasePanel({
       )}
 
       <div className="grid gap-3">
-        <Button size="lg" disabled title="Cart and checkout arrive in Phase 4">
-          <ShoppingBag className="size-4" /> Add to bag · coming soon
+        <Button
+          size="lg"
+          disabled={!variant || !source || add.isPending}
+          onClick={() => {
+            if (variant && source) add.mutate([{ variant_id: variant.id, store_id: source.id, source: "product" }]);
+          }}
+        >
+          {add.isSuccess ? <Check className="size-4" /> : <ShoppingBag className="size-4" />}
+          {!variant
+            ? "Select a size"
+            : !source
+              ? "Sold out in this size"
+              : add.isSuccess
+                ? "Added to bag"
+                : source.is_online && store?.id !== source.id
+                  ? "Add to bag · ships from online"
+                  : `Add to bag · ${source.city}`}
         </Button>
+        {add.isError && !String(add.error).includes("sign in") && (
+          <p role="alert" className="text-xs text-sale">{errorMessage(add.error)}</p>
+        )}
         <Link
           href={`/chat?product=${encodeURIComponent(productSlug)}`}
           className="focus-ring inline-flex h-13 items-center justify-center gap-2 border border-ink px-8 text-sm font-medium tracking-wide hover:bg-ink hover:text-ivory"

@@ -220,10 +220,10 @@ async def test_full_agent_turn_through_openai_format(session: AsyncSession, cata
     ("env", "expected"),
     [
         ({}, None),
-        ({"GROQ_API_KEY": "gsk_test"}, "groq:llama-3.3-70b-versatile"),
+        ({"GROQ_API_KEY": "gsk_test"}, "groq:openai/gpt-oss-120b"),
         (
             {"GROQ_API_KEY": "gsk_test", "ANTHROPIC_API_KEY": "sk-ant"},
-            "groq:llama-3.3-70b-versatile",
+            "groq:openai/gpt-oss-120b",
         ),
         ({"ANTHROPIC_API_KEY": "sk-ant"}, "claude-sonnet-5-5"),
         ({"LLM_PROVIDER": "ollama"}, "ollama:qwen2.5:7b"),

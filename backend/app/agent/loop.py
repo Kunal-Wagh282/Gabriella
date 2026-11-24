@@ -15,7 +15,7 @@ from app.agent.llm import ModelBackend, Usage
 from app.agent.prompts import SYSTEM_PROMPT
 from app.agent.schemas import Recommendation
 from app.agent.tools import TOOL_DEFINITIONS, ToolContext, execute_tool
-from app.agent.validator import repair, validate
+from app.agent.validator import owned_product_ids, repair, validate
 from app.core.logging import get_logger
 
 log = get_logger("gabriella.agent")
@@ -34,6 +34,8 @@ class TurnResult:
     model_requests: int = 0
     model: str | None = None
     error: str | None = None
+    # True when the answer came through a validated present_recommendation call.
+    presented: bool = False
 
 
 def status_text(name: str, args: dict[str, Any], ctx: ToolContext) -> str:
@@ -65,7 +67,13 @@ async def run_llm_turn(
     history: list[dict[str, Any]],
     user_content: str,
     emit: Emit,
+    *,
+    system: str = SYSTEM_PROMPT,
+    tools: list[dict[str, Any]] | None = None,
+    max_requests: int = MAX_MODEL_REQUESTS,
+    max_fix_attempts: int = MAX_FIX_ATTEMPTS,
 ) -> TurnResult:
+    tools = TOOL_DEFINITIONS if tools is None else tools
     messages: list[dict[str, Any]] = [*history, {"role": "user", "content": user_content}]
     usage = Usage()
     requests = 0
@@ -74,10 +82,8 @@ async def run_llm_turn(
     validation: dict[str, Any] = {"attempts": 0, "problems": [], "repairs": []}
     model_name: str | None = None
 
-    while requests < MAX_MODEL_REQUESTS:
-        turn = await backend.complete(
-            system=SYSTEM_PROMPT, tools=TOOL_DEFINITIONS, messages=messages
-        )
+    while requests < max_requests:
+        turn = await backend.complete(system=system, tools=tools, messages=messages)
         requests += 1
         model_name = turn.model or backend.name
         usage.input_tokens += turn.usage.input_tokens
@@ -181,8 +187,10 @@ async def run_llm_turn(
                         "content": "Shown to the shopper.",
                     }
                 )
-            elif report.recommendation is not None and fix_attempts >= MAX_FIX_ATTEMPTS:
-                final, notes = await repair(ctx.session, report, store=ctx.store)
+            elif report.recommendation is not None and fix_attempts >= max_fix_attempts:
+                final, notes = await repair(
+                    ctx.session, report, store=ctx.store, avoid=owned_product_ids(ctx.profile)
+                )
                 validation["repairs"] = notes
                 results.append(
                     {
@@ -214,7 +222,7 @@ async def run_llm_turn(
             validation["passed_first_time"] = (
                 validation["attempts"] == 1 and not validation["repairs"]
             )
-            return TurnResult(final, validation, usage, requests, model_name)
+            return TurnResult(final, validation, usage, requests, model_name, presented=True)
 
     log.warning("agent_step_limit", requests=requests)
     return TurnResult(

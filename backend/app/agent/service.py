@@ -3,6 +3,7 @@
 import time
 import uuid
 from collections.abc import Awaitable, Callable
+from datetime import UTC, datetime
 from typing import Any
 
 from sqlalchemy import select
@@ -11,16 +12,41 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.agent.fallback import run_fallback_turn
 from app.agent.llm import ModelBackend
 from app.agent.loop import TurnResult, run_llm_turn
+from app.agent.pipeline import run_pipeline_turn
 from app.agent.schemas import Recommendation
 from app.agent.tools import ToolContext
+from app.core.config import get_settings
 from app.core.errors import NotFound
 from app.core.logging import get_logger
 from app.core.metrics import AGENT_TURN_SECONDS, AGENT_TURNS, RECOMMENDED_ITEMS
-from app.db.models import AgentTrace, ChatMessage, ChatSession, Product, ProductVariant, Store, User
+from app.db.models import (
+    AgentTrace,
+    ChatMessage,
+    ChatSession,
+    Product,
+    ProductVariant,
+    Store,
+    Upload,
+    User,
+)
 from app.services.catalogue import resolve_product_id, summaries
+from app.services.profile import load_profile, profile_summary
 
 log = get_logger("gabriella.chat")
 HISTORY_MESSAGES = 12
+# Pipeline mode targets metered free tiers, so it carries less history.
+PIPELINE_HISTORY_MESSAGES = 6
+
+
+def agent_strategy(backend: ModelBackend) -> str:
+    """`tools`: the model searches freely (best for unmetered models like Claude).
+    `pipeline`: the server retrieves and drafts, the model refines in one call
+    (default for Groq, Ollama and other OpenAI-compatible providers)."""
+    configured = get_settings().agent_mode
+    if configured != "auto":
+        return configured
+    return "tools" if backend.name.startswith("claude") else "pipeline"
+
 
 Emit = Callable[[dict[str, Any]], Awaitable[None]]
 
@@ -115,7 +141,31 @@ async def model_history(db: AsyncSession, past: list[ChatMessage]) -> list[dict[
     return merged
 
 
-async def turn_preamble(db: AsyncSession, chat: ChatSession, store: Store | None) -> str:
+async def personalisation_profile(db: AsyncSession, chat: ChatSession) -> dict[str, Any] | None:
+    """The style profile, only if the shopper is signed in and personalisation is on for both
+    their account and this conversation."""
+    if chat.user_id is None or not chat.personalization_enabled:
+        return None
+    user = await db.get(User, chat.user_id)
+    if user is None or not (user.preferences and user.preferences.personalization_enabled):
+        return None
+    return await load_profile(db, user.id)
+
+
+async def active_upload(db: AsyncSession, chat: ChatSession) -> dict[str, Any] | None:
+    """The uploaded garment this chat is styling around, if it hasn't expired."""
+    if chat.context_upload_id is None:
+        return None
+    upload = await db.get(Upload, chat.context_upload_id)
+    if upload is None or upload.expires_at < datetime.now(UTC):
+        return None
+    vector = list(upload.image_embedding) if upload.image_embedding is not None else None
+    return {"analysis": upload.analysis, "vector": vector, "url": upload.url}
+
+
+async def turn_preamble(
+    db: AsyncSession, chat: ChatSession, store: Store | None, profile: dict[str, Any] | None = None
+) -> str:
     lines = [
         f"Shopper's store: {f'{store.name}, {store.city} ({store.code})' if store else 'not chosen; search all stores'}."
     ]
@@ -129,6 +179,16 @@ async def turn_preamble(db: AsyncSession, chat: ChatSession, store: Store | None
             lines.append(
                 f"Product in focus: #{p.id} {p.name}, {p.colour}, {p.category.name}, {p.gender}, ₹{p.price:,}."
             )
+    if profile:
+        lines.append(f"From past purchases (personalisation on): {profile_summary(profile)}.")
+    upload = await active_upload(db, chat)
+    if upload:
+        a = upload["analysis"]
+        lines.append(
+            f"The shopper uploaded a photo of their own garment: {a['label']} ({a['category_name']}, "
+            f"{a['colour']}, {a['pattern']}; {round(a['confidence'] * 100)}% confident). It is theirs, "
+            "not for sale: style around it. Treat the detection as a hint, not an exact identification."
+        )
     return "<session>\n" + "\n".join(lines) + "\n</session>\n\n"
 
 
@@ -140,12 +200,22 @@ async def run_turn(
     backend: ModelBackend | None,
     emit: Emit,
     product_key: str | None = None,
+    upload_id: uuid.UUID | None = None,
 ) -> ChatMessage:
     start = time.perf_counter()
     if product_key:
         chat.context_product_id = await resolve_product_id(db, product_key)
+        chat.context_upload_id = None
+    if upload_id:
+        upload = await db.get(Upload, upload_id)
+        if upload is None or upload.session_id != chat.id:
+            raise NotFound("That photo isn't part of this conversation")
+        chat.context_upload_id, chat.context_product_id = upload.id, None
     past = await messages_for(db, chat)
-    db.add(ChatMessage(session_id=chat.id, role="user", content=text))
+    user_payload = None
+    if upload_id:
+        user_payload = {"upload": {"url": upload.url, "analysis": upload.analysis}}
+    db.add(ChatMessage(session_id=chat.id, role="user", content=text, payload=user_payload))
     if chat.title == "New conversation":
         chat.title = text[:80]
     await db.commit()
@@ -155,6 +225,8 @@ async def run_turn(
         s.code: s for s in (await db.scalars(select(Store).where(Store.is_active.is_(True)))).all()
     }
     ctx = ToolContext(session=db, store=store, stores=stores)
+    ctx.profile = await personalisation_profile(db, chat)
+    ctx.upload = await active_upload(db, chat)
     # Products shown earlier in this conversation (and the one in focus) count as retrieved.
     ctx.seen_product_ids.update(pid for m in past for pid, _ in _shown_ids(m.payload))
     if chat.context_product_id:
@@ -166,8 +238,24 @@ async def run_turn(
     if backend is not None:
         try:
             history = await model_history(db, past)
-            preamble = await turn_preamble(db, chat, store)
-            result = await run_llm_turn(backend, ctx, history, preamble + text, emit)
+            preamble = await turn_preamble(db, chat, store, ctx.profile)
+            if agent_strategy(backend) == "pipeline":
+                result = await run_pipeline_turn(
+                    backend,
+                    ctx,
+                    chat.constraints,
+                    chat.context_product_id,
+                    history[-PIPELINE_HISTORY_MESSAGES:],
+                    preamble,
+                    text,
+                    emit,
+                )
+                if result.validation.get("strategy") == "pipeline-draft":
+                    mode = (
+                        "fallback"  # the model didn't answer; the shopper got the validated draft
+                    )
+            else:
+                result = await run_llm_turn(backend, ctx, history, preamble + text, emit)
             error = result.error
         except Exception as exc:  # noqa: BLE001 - never leave the shopper without an answer
             await db.rollback()
@@ -270,6 +358,7 @@ async def hydrate(db: AsyncSession, message: ChatMessage, store_id: int | None) 
     return {
         "id": message.id,
         "role": message.role,
+        "upload": payload.get("upload") if message.role == "user" else None,
         "content": message.content,
         "created_at": message.created_at.isoformat() if message.created_at else None,
         "groups": groups,

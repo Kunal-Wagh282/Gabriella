@@ -29,6 +29,7 @@ from app.db.models import (
 )
 from app.db.session import SessionLocal, engine
 from seed.generator import GenProduct, generate_catalogue
+from seed.history import ensure_demo_history
 from seed.images import render_images
 from seed.taxonomy import BRANDS, GROUPS, SPECS, STORES
 
@@ -227,6 +228,13 @@ async def _insert_users(session: AsyncSession, stores: dict[str, int]) -> None:
         session.add(user)
 
 
+async def _demo_history() -> None:
+    async with SessionLocal() as session, session.begin():
+        orders = await ensure_demo_history(session)
+    if orders:
+        print(f"seed: demo shopper purchase history, {orders} past orders")
+
+
 async def seed(*, if_empty: bool, reset: bool, skip_images: bool, workers: int) -> None:
     settings = get_settings()
     async with SessionLocal() as session:
@@ -246,6 +254,7 @@ async def seed(*, if_empty: bool, reset: bool, skip_images: bool, workers: int) 
     if existing:
         if if_empty:
             print(f"seed: {existing} products already present, skipping data")
+            await _demo_history()
             await engine.dispose()
             return
         sys.exit("seed: database already has products; use --reset to rebuild it")
@@ -255,6 +264,7 @@ async def seed(*, if_empty: bool, reset: bool, skip_images: bool, workers: int) 
         stores, brands, categories = await _insert_reference_data(session)
         await _insert_products(session, products, stores, brands, categories, settings.media_url)
         await _insert_users(session, stores)
+    await _demo_history()
     variants = sum(len(p.variants) for p in products)
     print(
         f"seed: {len(products)} products, {variants} variants, {variants * len(STORES)} stock rows, "

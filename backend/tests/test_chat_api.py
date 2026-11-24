@@ -6,6 +6,7 @@ import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.agent import service as agent_service
 from app.agent.llm import ModelTurn, ScriptedBackend, tool_use
 from app.api.routes import chat as chat_routes
 from app.db.models import AgentTrace
@@ -112,6 +113,7 @@ async def test_llm_turn_end_to_end_with_scripted_model(
         ]
     )
     monkeypatch.setattr(chat_routes, "default_backend", lambda: backend)
+    monkeypatch.setattr(agent_service, "agent_strategy", lambda _: "tools")
     chat = await _session(client, store_id=catalogue.pune)
     events = await _send(client, chat["id"], "white sneakers in UK 9")
     item = events[-1]["message"]["groups"][0]["items"][0]

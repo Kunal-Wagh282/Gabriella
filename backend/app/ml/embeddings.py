@@ -102,7 +102,7 @@ class HashingEmbedder:
         for item in images:
             img = Image.open(item) if isinstance(item, Path) else item
             small = img.convert("RGB").resize((8, 8))
-            flat = [c / 255 for px in small.getdata() for c in px]  # 192 values
+            flat = [c / 255 for px in small.get_flattened_data() for c in px]  # 192 values
             out.append(_normalise(flat + [0.0] * (EMBEDDING_DIM - len(flat))))
         return out
 

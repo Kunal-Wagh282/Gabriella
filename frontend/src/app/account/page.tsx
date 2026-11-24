@@ -49,7 +49,9 @@ export default function AccountPage() {
     <div className="mx-auto max-w-2xl px-4 py-16">
       <p className="eyebrow">Account</p>
       <h1 className="mt-2 font-display text-5xl">Hello, {me.full_name.split(" ")[0]}</h1>
-      <p className="mt-2 text-sm text-muted">{me.email}</p>
+      <p className="mt-2 text-sm text-muted">
+        {me.email} · <Link href="/orders" className="underline underline-offset-4 hover:text-ink">Your orders</Link>
+      </p>
 
       <section className="mt-12 border-t border-line pt-8">
         <h2 className="text-base font-semibold">Your store</h2>

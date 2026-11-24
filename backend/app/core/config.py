@@ -45,7 +45,7 @@ class Settings(BaseSettings):
         "auto"
     )
     groq_api_key: SecretStr | None = None
-    groq_model: str = "llama-3.3-70b-versatile"
+    groq_model: str = "openai/gpt-oss-120b"
     groq_base_url: str = "https://api.groq.com/openai/v1"
     ollama_base_url: str = "http://localhost:11434/v1"
     ollama_model: str = "qwen2.5:7b"
@@ -53,9 +53,13 @@ class Settings(BaseSettings):
     llm_base_url: str | None = None
     llm_api_key: SecretStr | None = None
     llm_model: str = ""
+    # For reasoning models such as gpt-oss: "medium" avoids most missed tool calls.
+    llm_reasoning_effort: Literal["low", "medium", "high"] = "medium"
     anthropic_api_key: SecretStr | None = None
     gabriella_model: str = "claude-sonnet-5-5"
     gabriella_effort: Literal["low", "medium", "high"] = "low"
+    # auto: open-ended tool loop for Claude, retrieve-then-refine pipeline for everything else.
+    agent_mode: Literal["auto", "tools", "pipeline"] = "auto"
 
     # Retrieval
     embedding_backend: Literal["clip", "hashing"] = "clip"

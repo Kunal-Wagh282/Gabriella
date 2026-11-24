@@ -1,67 +1,140 @@
 # Gabriella
 
-An inventory-aware, multimodal fashion sales assistant for a **simulated** multi-brand retailer.
-Gabriella recommends complete outfits — but only from products that exist in the catalogue and are
-in stock, in the shopper's size, at the store they shop from.
+**An AI fashion stylist that only recommends what's actually on the shelf.**
+
+Gabriella is a chat-based sales assistant for a simulated Indian multi-brand fashion retailer. Ask for "a casual dinner outfit under ₹6,000 in M and UK 9" and she builds a complete look. Every piece is a real catalogue product, in your size, in stock at your store, and within budget, and the server checks all of that before you see it. She also styles around a photo of your own clothes, learns from your past orders, and lets you buy the whole look in one click.
+
+It runs entirely on **free and open-source models**: open-weight LLMs on Groq or locally on Ollama, and CLIP embeddings on the CPU. It still works with no model at all.
+
+![A complete dinner look under ₹6,000, every piece in stock in the shopper's sizes](docs/images/chat-outfit.png)
+
+<table>
+<tr>
+<td width="33%"><img src="docs/images/chat-photo.png" alt="Styling around a photo of the shopper's own shirt"><br><sub><b>Photo of your own shirt</b>: identified, then styled around</sub></td>
+<td width="33%"><img src="docs/images/chat-personal.png" alt="Personalised picks from past orders"><br><sub><b>Personalised</b>: from past orders, never re-suggesting owned items</sub></td>
+<td width="33%"><img src="docs/images/product.png" alt="Product page with stock per store"><br><sub><b>Live stock</b>: per size, per store</sub></td>
+</tr>
+</table>
 
 > All brands, products, stores, prices and stock levels are generated. No real retailer is affiliated.
 
-## Status
+## What it does
 
-| Phase | Scope | State |
+| | |
+| --- | --- |
+| 🧥 **Complete outfits** | Top, bottom, shoes and an optional accessory, chosen together for formality, occasion and colour harmony under the *total* budget |
+| 📦 **Inventory-aware** | Stock is tracked per size per store. Recommendations, substitutes and "do you have this in M?" all answer for *your* store, and point to other stores when your size is out |
+| ✅ **Grounded by design** | A server-side validator rejects any product the model didn't retrieve, any size not in stock and any outfit over budget, then repairs or drops it. Hallucinated products can't reach the screen |
+| 🔎 **Hybrid search** | Postgres full-text + CLIP text vectors + CLIP image vectors, fused with Reciprocal Rank Fusion, after hard SQL filters for size, stock, price and colour |
+| 📷 **"What goes with this?"** | Upload a photo of your own garment. Gabriella identifies it (CLIP zero-shot plus a nearest-neighbour vote, with colour extraction), then builds an outfit around it or finds similar pieces |
+| 💡 **Personalisation** | A compact style profile built from past orders (sizes, colours, price band) fills in gaps and ranks picks. It never re-suggests owned items, and it can be switched off per account or per chat |
+| 🛍️ **Cart and checkout** | Add a single size or a whole look. Checkout decrements stock in one transaction using row locks |
+| 🔁 **Conversational** | "Make it less formal", "swap the shoes", "keep it under 7000" refine the current look; "start fresh" clears it |
+| 📊 **Measured** | An evaluation suite replays 26 scripted conversations and independently re-checks every displayed item against the database |
+
+## Results
+
+From the evaluation suite (`backend/evals`, details in [docs/evaluation.md](docs/evaluation.md)). The suite runs 26 conversations covering outfits, occasions, refinements, stock, substitutes, photos, personalisation and dead ends:
+
+<!-- EVAL-RESULTS:START -->
+| | Groq · gpt-oss-120b | Rule-based (no model) |
 | --- | --- | --- |
-| 1 | Schema, seeded catalogue, auth, catalogue UI, inventory model | ✅ Done |
-| 2 | Hybrid search (SQL filters + pgvector) and product APIs | ✅ Done |
-| 3 | Gabriella chat agent with tool calling and grounded product cards | ✅ Done |
-| 4 | Outfit builder, cart, simulated checkout | Next |
-| 5 | Personalisation from purchase history | Planned |
-| 6 | Image upload and multimodal matching | Planned |
-| 7 | Evaluation suite, observability, demo polish | Planned |
+| Conversations passing all checks | 23 / 26 ¹ | 26 / 26 |
+| Displayed items that exist, at the shown price | **100%** (63 items) | **100%** (74 items) |
+| Displayed items in stock in the shown size at the store | **100%** | **100%** |
+| Turns answered by the model (rest: rate-limited → rule-based) | 93% | – |
+| Turn latency p50 / p95 | 2.1 s / 8.7 s | 0.14 s / 0.32 s |
+| Tokens per turn | ≈ 2,000 | 0 |
 
-## Quick start (Docker)
+¹ Two misses were over-literal checks ("out of stock" vs "sold out"), since relaxed to accept paraphrases. The third, ignoring "start fresh", is fixed: a reset now bypasses the model. A later run with Groq's daily token quota used up still passed **26/26**, because every rate-limited turn was answered by the rule-based stylist ([report](backend/evals/reports/llm-quota-exhausted.md)).
+
+| Retrieval and vision | |
+| --- | --- |
+| Search precision@5, hybrid vs keyword-only | **0.91** vs 0.84 |
+| Search latency p50 / p95 | 51 ms / 85 ms |
+| Photo → outfit slot (top, bottom, shoes…) | 96.7% |
+| Photo → exact category (of 30) | 75.0% (CLIP zero-shot alone: 61.7%) |
+| Photo → colour family | 60.0% |
+<!-- EVAL-RESULTS:END -->
+
+## Quick start
+
+You need Docker. A free [Groq API key](https://console.groq.com/keys) is optional but recommended.
 
 ```bash
-cp .env.example .env        # optional: the defaults work for local use
+git clone <this repo> gabriella && cd gabriella
+cp .env.example .env          # then set GROQ_API_KEY=… (optional)
 docker compose up -d --build
 ```
 
-The first build downloads the CLIP models (~0.6 GB) into the backend image. The first boot then runs the database migrations, seeds the catalogue and renders about 1,000 product images, which takes 1–2 minutes. After that, the worker embeds every product (about a minute) and keyword search upgrades to hybrid search. Then open:
+- **The first build** downloads the CLIP models (about 0.6 GB).
+- **The first boot** migrates the database, seeds 500 products across 6 stores, and renders their images (1–2 minutes).
+- **The worker** then embeds the catalogue (about a minute).
 
-- Web app: http://localhost:3000 (chat with Gabriella at `/chat`)
-- API docs: http://localhost:8010/docs
+Then open:
 
-### Choosing Gabriella's model (free options included)
+| | |
+| --- | --- |
+| Shop and chat | http://localhost:3000 · chat at http://localhost:3000/chat |
+| API docs (OpenAPI) | http://localhost:8010/docs |
+| Metrics | http://localhost:8010/metrics |
 
-Out of the box, with no key, Gabriella runs a deterministic **rule-based stylist**. It goes through the same grounding checks as the LLM modes. To make her conversational, pick one of these:
-
-| Option | Cost | Setup |
-| --- | --- | --- |
-| **Groq** (recommended): open-weight `llama-3.3-70b-versatile` or `openai/gpt-oss-120b` | Free key, no card, rate-limited | Create a key at [console.groq.com/keys](https://console.groq.com/keys), set `GROQ_API_KEY=` in `.env` |
-| **Ollama**: fully local and offline, e.g. Qwen 2.5 | Free | Install [Ollama](https://ollama.com), run `ollama pull qwen2.5:7b`, set `LLM_PROVIDER=ollama` in `.env` |
-| Any OpenAI-compatible server (OpenRouter, vLLM, LM Studio) | Varies | `LLM_PROVIDER=openai_compatible`, `LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL` |
-| Anthropic Claude | Paid API | `ANTHROPIC_API_KEY=` |
-
-Then restart the API:
-
-```bash
-docker compose up -d api
-```
-
-The chat header shows which model is answering. On a laptop GPU with 4 GB of memory, a 7B Ollama model partly runs on the CPU and takes tens of seconds per turn; `OLLAMA_MODEL=qwen2.5:3b` is faster but makes more tool-call mistakes, which the validator catches. Product search never needs a key: CLIP embeddings run locally.
-- Metrics: http://localhost:8010/metrics
-
-Demo accounts (local only, configurable in `.env`):
+**Demo accounts** (local only, configurable in `.env`):
 
 | Role | Email | Password |
 | --- | --- | --- |
-| Shopper (Pune store) | `demo@gabriella.example` | `gabriella-demo` |
+| Shopper with order history (Pune) | `demo@gabriella.example` | `gabriella-demo` |
 | Admin (restocks) | `admin@gabriella.example` | `gabriella-admin` |
 
-Host ports are 5544 (Postgres), 6390 (Redis), 8010 (API) and 3000 (web), so they don't collide with other local stacks. Change them with `DB_HOST_PORT`, `REDIS_HOST_PORT`, `API_HOST_PORT` and `WEB_HOST_PORT`.
+A guided walkthrough is in [docs/demo-script.md](docs/demo-script.md).
+
+### Choosing the model
+
+| Option | Cost | Setup |
+| --- | --- | --- |
+| **Groq** (default when a key is set): `openai/gpt-oss-120b` | Free key, rate-limited | `GROQ_API_KEY=` in `.env` |
+| **Ollama**: fully local, e.g. `qwen2.5:7b` | Free | Install [Ollama](https://ollama.com), `ollama pull qwen2.5:7b`, set `LLM_PROVIDER=ollama` |
+| Any OpenAI-compatible server (OpenRouter, vLLM, LM Studio) | Varies | `LLM_PROVIDER=openai_compatible` plus `LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL` |
+| Anthropic Claude | Paid | `ANTHROPIC_API_KEY=` |
+| None | Free | Leave keys empty: the rule-based stylist answers |
+
+After changing `.env`, run `docker compose up -d api`. The chat header always shows which model answered. If a model call fails or hits a rate limit, the turn is answered by the rule-based stylist instead of erroring.
+
+## How it works
+
+```mermaid
+flowchart LR
+    U[Shopper] --> W[Next.js 16]
+    W --> A[FastAPI]
+    A --> P[("Postgres + pgvector<br/>stock · orders · vectors")]
+    A --> L["LLM<br/>Groq / Ollama / Claude"]
+    A -.-> C[CLIP, local]
+    A --> R[(Redis)] --> K[arq worker]
+```
+
+On each chat turn, the steps run in this order:
+
+1. **Constraints are parsed and carried over** (occasion, budget, sizes, gender, colours, formality), merged with the shopper's style profile if personalisation is on.
+2. **The server drafts** a grounded answer with its deterministic outfit composer. The composer runs hybrid retrieval per slot under hard stock, size and budget filters, then a combinatorial search scored on formality, occasion and colour harmony.
+3. **The LLM reviews and presents.** It gets the draft plus a few vetted alternatives per slot, and must answer through one structured `present_recommendation` tool call: message, products, sizes, reasons, follow-ups. With Claude, a full multi-step tool loop runs instead (search → inspect → build → present).
+4. **The validator checks every item**: retrieved in this conversation, active, right size, in stock at the store, within budget. Problems are sent back to the model to fix, then repaired server-side if needed.
+5. **The answer streams back** as server-sent events, with product cards re-hydrated from the database so stock is never stale.
+
+Every turn is traced: tool calls, validation repairs, tokens and latency.
+
+**→ Full technical tour: [docs/architecture.md](docs/architecture.md)**, covering retrieval, both agent modes, grounding, the stylist, checkout concurrency, personalisation, photo analysis and trade-offs.
+
+## Tech stack
+
+- **Backend:** Python 3.12, FastAPI, async SQLAlchemy 2, Alembic, Pydantic v2, arq, structlog, Prometheus client.
+- **Data:** PostgreSQL 16, pgvector 0.8 (HNSW), Postgres full-text search, Redis.
+- **AI:** CLIP ViT-B/32 via fastembed (ONNX); open-weight LLMs through any OpenAI-compatible API (Groq, Ollama); Anthropic SDK for Claude.
+- **Frontend:** Next.js 16 (App Router, React Server Components, cache components), React 19, TypeScript, TanStack Query, Tailwind CSS.
+- **Ops:** Docker Compose, uv, pnpm, Ruff, pytest (about 150 tests, including a race test for overselling).
 
 ## Local development
 
-Requires [uv](https://docs.astral.sh/uv/), Node 24 with pnpm, and Docker (for Postgres).
+You need [uv](https://docs.astral.sh/uv/), Node 24 with pnpm, and Docker (for Postgres and Redis).
 
 ```bash
 docker compose up -d db redis
@@ -71,30 +144,26 @@ docker compose up -d db redis
 cd backend
 uv sync
 uv run alembic upgrade head
-uv run python -m seed            # 500 products, stock for 6 stores, images in backend/media
-uv run python -m app.workers.embed   # CLIP vectors for every product (downloads models once)
+uv run python -m seed                 # catalogue, stock for 6 stores, images, demo order history
+uv run python -m app.workers.embed    # CLIP vectors for every product
 uv run uvicorn app.main:app --port 8010 --reload
 ```
 
-Run the background worker to keep embeddings in sync as products change. It is optional locally, because `app.workers.embed` does the same job once:
-
 ```bash
-cd backend && uv run arq app.workers.worker.WorkerSettings
+cd backend && uv run arq app.workers.worker.WorkerSettings   # optional locally: embedding sync, upload expiry
 ```
 
 ```bash
-cd frontend
-pnpm install
-pnpm dev                          # http://localhost:3000, proxies /api and /media to :8010
+cd frontend && pnpm install && pnpm dev   # http://localhost:3000, proxies /api and /media to :8010
 ```
 
-Rebuild the catalogue from scratch (asks for confirmation; wipes products, stock and users):
+Rebuild the catalogue from scratch (asks first; wipes products, stock, orders and users):
 
 ```bash
 cd backend && uv run python -m seed --reset
 ```
 
-### Tests and checks
+### Tests, checks and evals
 
 ```bash
 cd backend && uv run pytest && uv run ruff check .
@@ -104,121 +173,49 @@ cd backend && uv run pytest && uv run ruff check .
 cd frontend && pnpm lint && pnpm exec tsc --noEmit
 ```
 
-Backend tests run against the `gabriella_test` database, which is created automatically by `docker/postgres/init.sql`. Each run migrates it down and up with Alembic, so the migrations themselves get tested too. Tests use a deterministic hashing embedder (`EMBEDDING_BACKEND=hashing`), so they never need the CLIP models.
-
-## Retrieval (Phase 2)
-
-`GET /api/search?q=…` runs in five steps:
-
-1. **Understand the query.** A deterministic parser (`app/retrieval/query_parser.py`) pulls out categories, colours, gender, sizes, price ranges and "on sale". For example, "beige chinos under ₹3k in M" becomes category chinos, colour beige, price ≤ 3000 and size M. Occasion and style words ("office", "sangeet", "smart casual") become **soft** signals, because each product carries only a few occasion tags and filtering on them would hide good matches.
-2. **Apply hard filters in SQL first.** Only active products that pass the filters are considered. With `in_stock=true&store_id=…`, the requested size must actually be in stock at that store.
-3. **Rank three ways within that set:**
-   - Postgres full-text search on a weighted, trigger-maintained `tsvector`, using domain synonyms (pants→trousers, office→formal) and conversational stopwords.
-   - CLIP query vector vs. product **text** vectors.
-   - CLIP query vector vs. product **image** vectors (cross-modal: the words match the rendered flat-lay).
-
-   Every eligible product gets a vector rank, so keyword hits keep their semantic credit. Vector-only results enter the list only if they're close to the best match.
-4. **Fuse** the three lists with Reciprocal Rank Fusion (k = 60), then add small boosts for matching occasion and style.
-5. **Be honest about match quality.** The result is `exact` when the shopper's own words match, `related` when only synonyms or vectors do, and `none` otherwise. The UI says "No exact matches — these are the closest pieces we have" for `related`.
-
-Vectors only ever reorder products that already passed the SQL filters, so ranking can't surface something out of stock. `explain=true` returns each hit's lexical, text and image rank.
-
-Related endpoints (the contracts Gabriella's tools will use in Phase 3):
-
-| Endpoint | Purpose |
-| --- | --- |
-| `GET /api/search` | Hybrid search with the query interpretation, retrieval mode and latency |
-| `GET /api/products/{id}/similar` | Substitutes from the same outfit slot with a compatible gender and a different style, ranked by blended CLIP text + image similarity, each with plain-language reasons. Add `size`, `store_id` and `in_stock=true` for "something like this in M at Pune" |
-| `GET /api/variants/{id}/availability` | Exact stock for one size at one store, plus every other store |
-| `POST /api/admin/embeddings/rebuild` | Queue a re-embed on the worker (admin only) |
-
-The worker (arq on Redis) stores a hash of each product's embedded content, so a sync re-embeds only what changed. It runs on startup and hourly, and can be triggered on demand. Sold-out products keep their vectors; availability is decided by SQL at query time. Retrieval latency and match quality are exported as Prometheus metrics (`gabriella_retrieval_seconds`, `gabriella_search_total`).
-
-## Gabriella, the agent (Phase 3)
-
-Gabriella is a tool-use agent (`backend/app/agent/`) that runs on open-weight models through Groq or Ollama, or on Claude. The model never sees the catalogue up front: it has to call tools, and everything it shows passes server-side checks first.
-
-**Tools.** Each is a thin, typed wrapper over the services above. Inputs are validated with Pydantic before anything runs.
-
-| Tool | Does |
-| --- | --- |
-| `search_catalogue` | Hybrid search with hard filters (category, colour, gender, size, price, store stock). Returns compact product facts and the **in-stock sizes and variant IDs at the shopper's store** |
-| `get_product` | Description, every size and stock at every store |
-| `find_similar_products` | Substitutes from the same outfit slot, with reasons |
-| `check_variant_inventory` | Exact stock for one size, here and elsewhere |
-| `present_recommendation` | **The only way to answer.** A structured payload: a short message, groups of `{product_id, variant_id, role, reason}`, the updated constraints, and suggested replies |
-
-**Grounding, enforced on the server** (`validator.py`). Every `present_recommendation` call is checked before the shopper sees anything:
-
-- the product exists, is active, and was **returned by a tool in this conversation** (so a real but un-retrieved ID is rejected too);
-- the variant belongs to that product, matches the shopper's size, and is in stock at their store;
-- outfits fit the budget, and no product appears twice.
-
-Problems go back to Claude as an error `tool_result` it must fix, up to twice. After that, `repair` swaps each invalid item for an in-stock alternative in the same slot (or drops it) and trims the outfit to the budget, so nothing invalid is ever displayed. Product cards are **re-hydrated from the database on every read**, so an old answer never shows stale stock.
-
-**Conversation.**
-
-- Constraints (occasion, budget, apparel and shoe sizes, gender, colours, formality) are kept per session, so "make it less formal" refines the last request instead of starting over. "Start fresh" clears them.
-- Earlier turns are sent back as plain text, noting which product IDs were shown, so "swap the shoes" works.
-- The store and the product in focus travel in the user turn, which keeps the system prompt and tools byte-stable for prompt caching.
-
-**Provider-agnostic model layer** (`llm.py`, `openai_compat.py`). The agent loop speaks one internal tool-use format, and backends translate it:
-
-- **`OpenAICompatibleBackend`** serves Groq, Ollama, OpenRouter, vLLM and LM Studio through the OpenAI chat-completions format. Open models are looser with tool calls, so parsing is lenient:
-  - nested JSON sent as strings is decoded;
-  - unparseable arguments are handed to the validator to reject;
-  - Groq's `tool_use_failed` errors are retried.
-- **`AnthropicBackend`** serves Claude, with streaming, adaptive thinking, prompt caching and server-side refusal fallbacks.
-
-The same loop, tools and validator run whichever model is behind it. That matters most for smaller open models: their mistakes are caught on the server instead of reaching shoppers. Tool choice stays `auto`; the prompt and a one-time nudge make sure the turn ends in `present_recommendation`. If the model call fails (model offline, rate limit), the turn degrades to the deterministic stylist instead of erroring, and the trace records why.
-
-**Deterministic stylist** (`fallback.py`), used when no API key is set:
-
-- **Same contract:** the query parser, constraint carry-over and the same validator.
-- **Outfit composer:** a per-slot shortlist from hybrid search under hard stock, size and budget filters, then a search over combinations scored on formality, occasion fit, retrieval rank and colour harmony (`styling.py`), under the whole budget.
-- **Dress-code rules:** no shorts or caps at a wedding.
-- **Ethnic wear** for weddings and festivals.
-- **Honest budgets:** it says "the most affordable complete look here is ₹5,897" rather than failing silently.
-
-**Streaming and observability.** `POST /api/chat/sessions/{id}/messages` streams server-sent events: `status` lines while tools run ("Searching chinos in M at Pune…"), then one `message` carrying the validated, hydrated answer. Every turn writes an `agent_traces` row with the mode, model, each tool call (input, result count, latency, errors), validation attempts and repairs, model requests, input/output/cache-read tokens, and latency. It also updates the `gabriella_agent_turns_total`, `gabriella_agent_turn_seconds` and `gabriella_recommended_items_total` metrics.
-
-Agent tests replay scripted models (`ScriptedBackend`, and a fake OpenAI-format client for the Groq/Ollama path), so CI never calls a real model. They cover a hallucinated ID being rejected and then fixed, repair after repeated failures, refusals, and a turn that ends without a recommendation.
-
-## Architecture
-
-```
-Browser ──► Next.js 16 (App Router, RSC, Tailwind)
-              │  /api/*, /media/*  (rewrites — cookies stay first-party)
-              ▼
-            FastAPI ──► PostgreSQL 16 + pgvector
-              │           products (+ weighted tsvector) · variants · inventory(variant × store)
-              │           product_embeddings (CLIP text + image, HNSW) · inventory_movements
-              │           users · auth_sessions
-              ├─ /media   generated flat-lay product images
-              └─ Redis ◄── arq worker (embeds new or changed products)
+```bash
+cd backend && uv run python -m evals.run               # rule-based stylist (fast, free)
 ```
 
-- **The database is the source of truth.** Price, size and stock always come from PostgreSQL. `product_embeddings` (512-d CLIP text and image vectors) is used only for discovery and never for availability.
-- **Inventory** is tracked per variant (size) per store. A `CHECK (on_hand >= 0)` constraint backs it up, every change takes a row lock (`SELECT … FOR UPDATE`), and every change is written to an append-only `inventory_movements` table. A test races 10 buyers for the last unit and asserts that exactly one succeeds.
-- **Auth** uses short-lived JWT access tokens and rotating refresh tokens, both in httpOnly SameSite cookies. Refresh tokens are stored hashed; replaying a used one revokes every session for that user.
-- **Observability:** structured JSON logs carry a request ID (also returned as `X-Request-ID`), Prometheus serves `/metrics`, `/healthz` and `/readyz` report status, and every error uses one envelope: `{"error": {"code", "message", "request_id"}}`.
-- **Catalogue data** comes from a deterministic generator (`backend/seed/`). It covers 30 categories, 12 fictional brands, 39 colours and realistic INR pricing, and deliberately leaves sizes sold out at some stores. Product images are rendered with Pillow from each product's own category, colour and pattern, so the picture always matches the data (which matters for image search in Phase 6).
+```bash
+cd backend && uv run python -m evals.run --mode llm    # the configured model; paced for free-tier limits
+```
+
+- **Tests** run against a separate `gabriella_test` database. They migrate it down and up each run, so the migrations get tested too.
+- **No real models in tests:** a deterministic hashing embedder stands in for CLIP, and scripted models stand in for the LLM.
+- **Evals** write `backend/evals/reports/<mode>-latest.md` and `.json`.
 
 ## Repository layout
 
 ```
 backend/
-  app/          FastAPI app: core (config, logging, errors, metrics), db, schemas, services, routes
-    agent/      Gabriella: tools, Claude loop, validator, deterministic stylist, chat service
+  app/
+    agent/      tools, tool loop, pipeline mode, validator + repair, rule-based stylist, providers
     retrieval/  query parser, hybrid search, similar products
-    ml/         embedding backends (CLIP via fastembed, hashing for tests)
-    workers/    arq worker and one-off embed command
+    vision/     photo upload safety, garment recognition, colour extraction
+    services/   inventory, cart and checkout, style profiles
+    api/        routes: auth, catalogue, chat (SSE), commerce, admin, health
+    db/         SQLAlchemy models
+    ml/         embedding backends (CLIP, hashing for tests)
+    workers/    arq worker: embedding sync, upload purge
   alembic/      migrations
-  seed/         catalogue taxonomy, generator, image renderer, loader
-  tests/        API, retrieval, inventory-concurrency and seed-integrity tests
-frontend/
-  src/app/      routes: / , /shop, /product/[slug], /chat, /login, /signup, /account
-  src/components, src/lib
-docker/         Postgres init script
-docker-compose.yml, .env.example
+  seed/         catalogue generator, image renderer, demo order history
+  evals/        evaluation cases, runner, reports
+  tests/
+frontend/src/
+  app/          /, /shop, /product/[slug], /chat, /bag, /orders, /account, /login, /signup
+  components/   chat UI, product cards, purchase panel, …
+  lib/          API client, hooks
+docs/           architecture, evaluation, deployment, demo script
 ```
+
+## Deploying
+
+The simplest public deployment is the same Docker Compose stack on a small VM behind Caddy for HTTPS. [docs/deployment.md](docs/deployment.md) covers it step by step, along with a managed-services alternative (Vercel, Render/Fly, Neon, Upstash) and a production checklist.
+
+## Limitations
+
+- **Simulated catalogue:** generated products with rendered flat-lay images. Real phone photos, with people and busy backgrounds, will be recognised less accurately than the eval numbers suggest.
+- **Colour from photos** is the weakest signal (about 60% on colour family), especially light garments on light backgrounds. The chat shows the guess and its confidence, so a wrong read is visible.
+- **Free-tier limits:** Groq's free tier allows 8,000 tokens a minute and 200,000 a day for `gpt-oss-120b`. Pipeline mode keeps each turn to about 2,000 tokens, so that is roughly 80–100 model-answered turns a day. Beyond that, the rule-based stylist answers, with the same grounding guarantees.
+- **Payments are simulated.**
