@@ -16,6 +16,7 @@ About 2,000 tokens a turn, against 10,000-28,000 for the open-ended tool loop.
 """
 
 import json
+import re
 from typing import Any
 
 from app.agent.fallback import _RESET, run_fallback_turn
@@ -116,6 +117,18 @@ def _merge_constraints(draft: SessionConstraints, model: SessionConstraints) -> 
     return SessionConstraints.model_validate(merged)
 
 
+_CHEAPEST = re.compile(r"The most affordable complete look here comes to about (₹[\d,]+)\.")
+
+
+def _keep_cheapest_look(draft_message: str, message: str) -> str:
+    """Models often soften "it costs at least ₹7,097" into "consider raising the budget".
+    The real figure is the most useful fact in that answer, so put it back if it was dropped."""
+    found = _CHEAPEST.search(draft_message)
+    if found and found.group(1) not in message:
+        return f"{message.rstrip()} {found.group(0)}"
+    return message
+
+
 async def run_pipeline_turn(
     backend: ModelBackend,
     ctx: ToolContext,
@@ -157,9 +170,11 @@ async def run_pipeline_turn(
         draft_result.error = result.error or "model did not call present_recommendation"
         draft_result.validation["strategy"] = "pipeline-draft"
         return draft_result
+    message = _keep_cheapest_look(draft.message, result.recommendation.message)
     merged = result.recommendation.model_copy(
         update={
-            "constraints": _merge_constraints(draft.constraints, result.recommendation.constraints)
+            "message": message,
+            "constraints": _merge_constraints(draft.constraints, result.recommendation.constraints),
         }
     )
     # Re-check with the merged constraints, so the shopper's sizes and budget always apply

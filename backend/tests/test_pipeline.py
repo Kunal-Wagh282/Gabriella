@@ -190,3 +190,14 @@ async def test_start_fresh_skips_the_model(
     trace = (await session.scalars(select(AgentTrace))).one()
     assert trace.validation["strategy"] == "pipeline-reset"
     assert trace.model_requests == 0
+
+
+def test_keeps_the_cheapest_look_figure_the_model_dropped():
+    from app.agent.pipeline import _keep_cheapest_look
+
+    draft = "I couldn't fit a full outfit in stock at Pune within ₹2,000. The most affordable complete look here comes to about ₹7,097."
+    kept = _keep_cheapest_look(draft, "Sorry, nothing fits that budget. Consider raising it.")
+    assert kept.endswith("The most affordable complete look here comes to about ₹7,097.")
+    already = "The cheapest complete look is ₹7,097."
+    assert _keep_cheapest_look(draft, already) == already
+    assert _keep_cheapest_look("Here's a dinner look.", "Enjoy!") == "Enjoy!"

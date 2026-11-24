@@ -1,5 +1,11 @@
 # Demo script (about 3 minutes)
 
+> A captioned recording of this walkthrough is in [`docs/media/gabriella-demo.mp4`](media/gabriella-demo.mp4). To re-record it after changing the app (it needs the Docker stack running and Groq quota):
+>
+> ```bash
+> uv run --no-project --with playwright --with imageio-ffmpeg python scripts/record_demo.py
+> ```
+
 Use this for a live walkthrough or a screen recording. Each step shows one capability, and the "Point out" line is the thing to say.
 
 **Setup:** `docker compose up -d`, with `GROQ_API_KEY` set in `.env`. Open http://localhost:3000. Keep the Pune store selected (it's the default for the demo account).

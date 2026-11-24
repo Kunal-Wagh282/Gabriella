@@ -6,13 +6,18 @@ Gabriella is a chat-based sales assistant for a simulated Indian multi-brand fas
 
 It runs entirely on **free and open-source models**: open-weight LLMs on Groq or locally on Ollama, and CLIP embeddings on the CPU. It still works with no model at all.
 
-![A complete dinner look under ₹6,000, every piece in stock in the shopper's sizes](docs/images/chat-outfit.png)
+### ▶ [Watch the 2-minute demo](docs/media/gabriella-demo.mp4)
+
+[![Gabriella building a complete dinner look under ₹6,000, every piece in stock in the shopper's sizes](docs/media/gabriella-demo.gif)](docs/media/gabriella-demo.mp4)
+
+<sub>The demo covers search → a complete outfit → refining it → an honest "not possible" → styling a photo of your own shirt → personalised picks → buying the whole look. It was recorded automatically from the running app with <code>scripts/record_demo.py</code>.</sub>
 
 <table>
 <tr>
-<td width="33%"><img src="docs/images/chat-photo.png" alt="Styling around a photo of the shopper's own shirt"><br><sub><b>Photo of your own shirt</b>: identified, then styled around</sub></td>
-<td width="33%"><img src="docs/images/chat-personal.png" alt="Personalised picks from past orders"><br><sub><b>Personalised</b>: from past orders, never re-suggesting owned items</sub></td>
-<td width="33%"><img src="docs/images/product.png" alt="Product page with stock per store"><br><sub><b>Live stock</b>: per size, per store</sub></td>
+<td width="25%"><img src="docs/images/chat-outfit.png" alt="A complete outfit in stock"><br><sub><b>Complete outfits</b>: in stock, in your size, within budget</sub></td>
+<td width="25%"><img src="docs/images/chat-photo.png" alt="Styling around a photo of the shopper's own shirt"><br><sub><b>Photo of your own shirt</b>: identified, then styled around</sub></td>
+<td width="25%"><img src="docs/images/chat-personal.png" alt="Personalised picks from past orders"><br><sub><b>Personalised</b>: from past orders, never re-suggesting owned items</sub></td>
+<td width="25%"><img src="docs/images/product.png" alt="Product page with stock per store"><br><sub><b>Live stock</b>: per size, per store</sub></td>
 </tr>
 </table>
 
