@@ -181,7 +181,7 @@ cd backend && uv run pytest && uv run ruff check .
 ```
 
 ```bash
-cd frontend && pnpm lint && pnpm exec tsc --noEmit
+cd frontend && pnpm lint && pnpm exec next typegen && pnpm exec tsc --noEmit
 ```
 
 ```bash

@@ -62,5 +62,6 @@ jobs:
           cache-dependency-path: frontend/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint
+      - run: pnpm exec next typegen   # PageProps/LayoutProps are generated, not checked in
       - run: pnpm exec tsc --noEmit
       - run: pnpm build
