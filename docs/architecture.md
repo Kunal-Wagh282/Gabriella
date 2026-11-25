@@ -134,6 +134,11 @@ Every `present_recommendation` call goes through `validator.py` before anything 
 
 Problems go back to the model as a tool error to fix. If it still fails, `repair()` swaps each invalid item for an in-stock substitute from the same slot (never something the shopper already owns), or drops it, then trims the outfit to the budget. Product cards are **re-hydrated from the database on every read**, so reopening an old chat never shows stale prices or stock.
 
+Two smaller honesty checks cover the text around the cards:
+
+- **Reasons must describe their own card.** A model that swaps a product sometimes keeps the old explanation ("white sneakers keep it relaxed" under a pair of loafers). If a reason opens by naming a different kind of garment, the validator replaces it with a factual one built from the product's real colour, material and fit. Mentioning the other pieces later in a reason ("pairs well with dark chinos") is still allowed.
+- **Every answer says who wrote it.** Each assistant message records whether the model answered or the rule-based stylist did, and whether that was a fallback because the model was rate-limited or offline. The chat shows this under the message ("Answered by openai/gpt-oss-120b on Groq"), so the header's model name never overclaims.
+
 The evaluation suite re-checks all of this independently, against the database rather than through the validator (see [evaluation.md](evaluation.md)).
 
 ## The rule-based stylist

@@ -11,6 +11,7 @@ import { Price } from "@/components/ui";
 import {
   constraintChips,
   createSession,
+  describeAnswer,
   describeModel,
   getSession,
   sendMessage,
@@ -309,6 +310,11 @@ export function ChatApp() {
               {m.groups.map((g, i) => (
                 <RecommendationGroup key={`${m.id}-${i}`} group={g} storeId={chat?.store_id ?? null} />
               ))}
+              {m.answered_by && (
+                <p className="mt-2 text-[11px] text-muted" title="Every answer passes the same stock, size and budget checks">
+                  {describeAnswer(m.answered_by)}
+                </p>
+              )}
             </div>
           ),
         )}

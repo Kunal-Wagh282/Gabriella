@@ -1,0 +1,670 @@
+{
+  "generated": "2026-11-25 18:27 UTC",
+  "mode": "llm",
+  "model": "groq:openai/gpt-oss-120b",
+  "chat": {
+    "cases": [
+      {
+        "id": "dinner-budget",
+        "group": "outfit",
+        "passed": true,
+        "fails": [],
+        "items": 3,
+        "grounded": 3,
+        "stock_ok": 3,
+        "latency_ms": [
+          11782
+        ],
+        "answer": "Here’s a relaxed dinner look under ₹6,000, all in your size.",
+        "modes": [
+          "llm"
+        ],
+        "strategies": [
+          "pipeline"
+        ],
+        "tool_calls": 2,
+        "tool_errors": 0,
+        "model_requests": 1,
+        "tokens": 2881,
+        "repairs": 0
+      },
+      {
+        "id": "office-men",
+        "group": "occasion",
+        "passed": true,
+        "fails": [],
+        "items": 4,
+        "grounded": 4,
+        "stock_ok": 4,
+        "latency_ms": [
+          1831
+        ],
+        "answer": "Here’s a polished office outfit in your sizes, with pieces that coordinate nicely for a smart‑casual look.",
+        "modes": [
+          "llm"
+        ],
+        "strategies": [
+          "pipeline"
+        ],
+        "tool_calls": 2,
+        "tool_errors": 0,
+        "model_requests": 1,
+        "tokens": 2848,
+        "repairs": 0
+      },
+      {
+        "id": "sangeet-women",
+        "group": "occasion",
+        "passed": true,
+        "fails": [],
+        "items": 4,
+        "grounded": 4,
+        "stock_ok": 4,
+        "latency_ms": [
+          2118
+        ],
+        "answer": "Here’s a festive sangeet outfit that stays within your ₹12,000 budget and fits your size S.",
+        "modes": [
+          "llm"
+        ],
+        "strategies": [
+          "pipeline"
+        ],
+        "tool_calls": 2,
+        "tool_errors": 0,
+        "model_requests": 1,
+        "tokens": 2843,
+        "repairs": 0
+      },
+      {
+        "id": "party-women",
+        "group": "occasion",
+        "passed": true,
+        "fails": [],
+        "items": 4,
+        "grounded": 4,
+        "stock_ok": 4,
+        "latency_ms": [
+          3216
+        ],
+        "answer": "Here’s a chic party look under ₹9,000, perfect for a stylish evening.",
+        "modes": [
+          "llm"
+        ],
+        "strategies": [
+          "pipeline"
+        ],
+        "tool_calls": 2,
+        "tool_errors": 0,
+        "model_requests": 1,
+        "tokens": 3028,
+        "repairs": 0
+      },
+      {
+        "id": "travel-men",
+        "group": "occasion",
+        "passed": true,
+        "fails": [],
+        "items": 4,
+        "grounded": 4,
+        "stock_ok": 4,
+        "latency_ms": [
+          2212
+        ],
+        "answer": "Here’s a comfortable travel look in XL, perfect for moving through airports and exploring new places.",
+        "modes": [
+          "llm"
+        ],
+        "strategies": [
+          "pipeline"
+        ],
+        "tool_calls": 2,
+        "tool_errors": 0,
+        "model_requests": 1,
+        "tokens": 2914,
+        "repairs": 0
+      },
+      {
+        "id": "navy-office",
+        "group": "outfit",
+        "passed": true,
+        "fails": [],
+        "items": 4,
+        "grounded": 4,
+        "stock_ok": 4,
+        "latency_ms": [
+          3434
+        ],
+        "answer": "Here’s a sharp navy office look that balances professionalism with a relaxed vibe.",
+        "modes": [
+          "llm"
+        ],
+        "strategies": [
+          "pipeline"
+        ],
+        "tool_calls": 2,
+        "tool_errors": 0,
+        "model_requests": 1,
+        "tokens": 3068,
+        "repairs": 0
+      },
+      {
+        "id": "budget-impossible",
+        "group": "no-result",
+        "passed": true,
+        "fails": [],
+        "items": 0,
+        "grounded": 0,
+        "stock_ok": 0,
+        "latency_ms": [
+          2036
+        ],
+        "answer": "I'm sorry, we don't have a complete formal men's outfit under ₹2,000 at this store. The most affordable set here is around ₹7,097. If you can raise your budget or explore another location, I can find suitable options for you.",
+        "modes": [
+          "llm"
+        ],
+        "strategies": [
+          "pipeline"
+        ],
+        "tool_calls": 2,
+        "tool_errors": 0,
+        "model_requests": 1,
+        "tokens": 1363,
+        "repairs": 0
+      },
+      {
+        "id": "ask-gender",
+        "group": "clarify",
+        "passed": true,
+        "fails": [],
+        "items": 0,
+        "grounded": 0,
+        "stock_ok": 0,
+        "latency_ms": [
+          906
+        ],
+        "answer": "Are you looking for men's or women's dinner attire?",
+        "modes": [
+          "llm"
+        ],
+        "strategies": [
+          "pipeline"
+        ],
+        "tool_calls": 2,
+        "tool_errors": 0,
+        "model_requests": 1,
+        "tokens": 1165,
+        "repairs": 0
+      },
+      {
+        "id": "less-formal",
+        "group": "refine",
+        "passed": true,
+        "fails": [],
+        "items": 4,
+        "grounded": 4,
+        "stock_ok": 4,
+        "latency_ms": [
+          4338,
+          10149
+        ],
+        "answer": "Here’s a relaxed office outfit with lighter tones and casual sneakers, perfect for a smart‑casual day.",
+        "modes": [
+          "llm",
+          "llm"
+        ],
+        "strategies": [
+          "pipeline",
+          "pipeline"
+        ],
+        "tool_calls": 4,
+        "tool_errors": 0,
+        "model_requests": 2,
+        "tokens": 6148,
+        "repairs": 0
+      },
+      {
+        "id": "refine-budget",
+        "group": "refine",
+        "passed": true,
+        "fails": [],
+        "items": 3,
+        "grounded": 3,
+        "stock_ok": 3,
+        "latency_ms": [
+          2373,
+          2837
+        ],
+        "answer": "A crisp olive linen shirt with relaxed black chinos and tan tassel loafers stays under ₹7,000 and is perfect for a smart‑casual office day.",
+        "modes": [
+          "llm",
+          "llm"
+        ],
+        "strategies": [
+          "pipeline",
+          "pipeline"
+        ],
+        "tool_calls": 4,
+        "tool_errors": 0,
+        "model_requests": 2,
+        "tokens": 6299,
+        "repairs": 0
+      },
+      {
+        "id": "start-fresh",
+        "group": "refine",
+        "passed": true,
+        "fails": [],
+        "items": 0,
+        "grounded": 0,
+        "stock_ok": 0,
+        "latency_ms": [
+          2830,
+          4312
+        ],
+        "answer": "Fresh start. What are you shopping for today?",
+        "modes": [
+          "llm",
+          "llm"
+        ],
+        "strategies": [
+          "pipeline",
+          "pipeline-reset"
+        ],
+        "tool_calls": 3,
+        "tool_errors": 0,
+        "model_requests": 1,
+        "tokens": 3099,
+        "repairs": 0
+      },
+      {
+        "id": "white-sneakers",
+        "group": "search",
+        "passed": true,
+        "fails": [],
+        "items": 1,
+        "grounded": 1,
+        "stock_ok": 1,
+        "latency_ms": [
+          1136
+        ],
+        "answer": "These white leather court sneakers are in stock in UK 9 and match your colour request.",
+        "modes": [
+          "llm"
+        ],
+        "strategies": [
+          "pipeline"
+        ],
+        "tool_calls": 2,
+        "tool_errors": 0,
+        "model_requests": 1,
+        "tokens": 1399,
+        "repairs": 0
+      },
+      {
+        "id": "black-dress-sale",
+        "group": "search",
+        "passed": true,
+        "fails": [],
+        "items": 3,
+        "grounded": 3,
+        "stock_ok": 3,
+        "latency_ms": [
+          3014
+        ],
+        "answer": "I’m sorry, we don’t have any black dresses on sale right now, but here are a few timeless black options you might love.",
+        "modes": [
+          "llm"
+        ],
+        "strategies": [
+          "pipeline"
+        ],
+        "tool_calls": 2,
+        "tool_errors": 0,
+        "model_requests": 1,
+        "tokens": 1812,
+        "repairs": 0
+      },
+      {
+        "id": "kurta-budget",
+        "group": "search",
+        "passed": true,
+        "fails": [],
+        "items": 2,
+        "grounded": 2,
+        "stock_ok": 2,
+        "latency_ms": [
+          1526
+        ],
+        "answer": "Here are two silk‑blend kurtas under ₹2,500 that match your style and budget.",
+        "modes": [
+          "llm"
+        ],
+        "strategies": [
+          "pipeline"
+        ],
+        "tool_calls": 2,
+        "tool_errors": 0,
+        "model_requests": 1,
+        "tokens": 1595,
+        "repairs": 0
+      },
+      {
+        "id": "linen-shirt-L",
+        "group": "search",
+        "passed": true,
+        "fails": [],
+        "items": 2,
+        "grounded": 2,
+        "stock_ok": 2,
+        "latency_ms": [
+          1669
+        ],
+        "answer": "Here are the linen shirts we have in size L for men.",
+        "modes": [
+          "llm"
+        ],
+        "strategies": [
+          "pipeline"
+        ],
+        "tool_calls": 2,
+        "tool_errors": 0,
+        "model_requests": 1,
+        "tokens": 1987,
+        "repairs": 0
+      },
+      {
+        "id": "mumbai-stock",
+        "group": "stock",
+        "passed": true,
+        "fails": [],
+        "items": 0,
+        "grounded": 0,
+        "stock_ok": 0,
+        "latency_ms": [
+          1792
+        ],
+        "answer": "I'm sorry, we don't have any white sneakers in UK 9 at our Bandra store right now. You could check other nearby stores, consider a different colour, or try another size.",
+        "modes": [
+          "llm"
+        ],
+        "strategies": [
+          "pipeline"
+        ],
+        "tool_calls": 2,
+        "tool_errors": 1,
+        "model_requests": 1,
+        "tokens": 1407,
+        "repairs": 0
+      },
+      {
+        "id": "similar-chinos-M",
+        "group": "similar",
+        "passed": true,
+        "fails": [],
+        "items": 6,
+        "grounded": 6,
+        "stock_ok": 6,
+        "latency_ms": [
+          2235
+        ],
+        "answer": "Sure, here are a few chinos in size M that are similar to your straight beige pair.",
+        "modes": [
+          "llm"
+        ],
+        "strategies": [
+          "pipeline"
+        ],
+        "tool_calls": 2,
+        "tool_errors": 0,
+        "model_requests": 1,
+        "tokens": 2159,
+        "repairs": 0
+      },
+      {
+        "id": "availability-sold-out",
+        "group": "stock",
+        "passed": true,
+        "fails": [],
+        "items": 4,
+        "grounded": 4,
+        "stock_ok": 4,
+        "latency_ms": [
+          2047
+        ],
+        "answer": "The relaxed garment‑dyed cotton chinos in size M are currently sold out at our Pune store, but these similar options are in stock here today.",
+        "modes": [
+          "llm"
+        ],
+        "strategies": [
+          "pipeline"
+        ],
+        "tool_calls": 2,
+        "tool_errors": 0,
+        "model_requests": 1,
+        "tokens": 1864,
+        "repairs": 0
+      },
+      {
+        "id": "style-product",
+        "group": "outfit",
+        "passed": true,
+        "fails": [],
+        "items": 4,
+        "grounded": 4,
+        "stock_ok": 4,
+        "latency_ms": [
+          3722
+        ],
+        "answer": "Pair your navy non‑iron shirt with beige straight chinos, tan tassel loafers, and a tan canvas belt for a sharp, office‑ready look.",
+        "modes": [
+          "llm"
+        ],
+        "strategies": [
+          "pipeline"
+        ],
+        "tool_calls": 2,
+        "tool_errors": 0,
+        "model_requests": 1,
+        "tokens": 2934,
+        "repairs": 0
+      },
+      {
+        "id": "impossible-filters",
+        "group": "no-result",
+        "passed": true,
+        "fails": [],
+        "items": 0,
+        "grounded": 0,
+        "stock_ok": 0,
+        "latency_ms": [
+          1773
+        ],
+        "answer": "I'm sorry, we don't have gold sneakers in UK 3 at the moment. Would you be open to a different size or a similar shade like bronze?",
+        "modes": [
+          "llm"
+        ],
+        "strategies": [
+          "pipeline"
+        ],
+        "tool_calls": 2,
+        "tool_errors": 0,
+        "model_requests": 1,
+        "tokens": 1372,
+        "repairs": 0
+      },
+      {
+        "id": "off-topic",
+        "group": "no-result",
+        "passed": true,
+        "fails": [],
+        "items": 0,
+        "grounded": 0,
+        "stock_ok": 0,
+        "latency_ms": [
+          945
+        ],
+        "answer": "I’m sorry, I can only help with clothing from our store. Let me know what you’re looking for.",
+        "modes": [
+          "llm"
+        ],
+        "strategies": [
+          "pipeline"
+        ],
+        "tool_calls": 2,
+        "tool_errors": 0,
+        "model_requests": 1,
+        "tokens": 1159,
+        "repairs": 0
+      },
+      {
+        "id": "personal-picks",
+        "group": "personalisation",
+        "passed": true,
+        "fails": [],
+        "items": 4,
+        "grounded": 4,
+        "stock_ok": 4,
+        "latency_ms": [
+          1878
+        ],
+        "answer": "Here are some fresh picks that echo your classic, smart‑casual style while staying within your usual budget.",
+        "modes": [
+          "llm"
+        ],
+        "strategies": [
+          "pipeline"
+        ],
+        "tool_calls": 2,
+        "tool_errors": 0,
+        "model_requests": 1,
+        "tokens": 2038,
+        "repairs": 0
+      },
+      {
+        "id": "personal-off",
+        "group": "personalisation",
+        "passed": true,
+        "fails": [],
+        "items": 0,
+        "grounded": 0,
+        "stock_ok": 0,
+        "latency_ms": [
+          945
+        ],
+        "answer": "Sure! To suggest fresh picks that match your style, could you share what you bought previously – the type of item, colour you liked, and any budget you had in mind?",
+        "modes": [
+          "llm"
+        ],
+        "strategies": [
+          "pipeline"
+        ],
+        "tool_calls": 2,
+        "tool_errors": 0,
+        "model_requests": 1,
+        "tokens": 1249,
+        "repairs": 0
+      },
+      {
+        "id": "photo-shirt-outfit",
+        "group": "image",
+        "passed": true,
+        "fails": [],
+        "items": 2,
+        "grounded": 2,
+        "stock_ok": 2,
+        "latency_ms": [
+          2068
+        ],
+        "answer": "Pair your navy shirt with sleek black chinos and classic black chukka boots for a sharp, office‑ready ensemble.",
+        "modes": [
+          "llm"
+        ],
+        "strategies": [
+          "pipeline"
+        ],
+        "tool_calls": 2,
+        "tool_errors": 0,
+        "model_requests": 1,
+        "tokens": 2729,
+        "repairs": 0
+      },
+      {
+        "id": "photo-sneaker-similar",
+        "group": "image",
+        "passed": true,
+        "fails": [],
+        "items": 3,
+        "grounded": 3,
+        "stock_ok": 3,
+        "latency_ms": [
+          1720
+        ],
+        "answer": "Here are a few sneakers that echo the light grey shade of your own pair.",
+        "modes": [
+          "llm"
+        ],
+        "strategies": [
+          "pipeline"
+        ],
+        "tool_calls": 2,
+        "tool_errors": 0,
+        "model_requests": 1,
+        "tokens": 2032,
+        "repairs": 0
+      },
+      {
+        "id": "photo-dress-shoes",
+        "group": "image",
+        "passed": true,
+        "fails": [],
+        "items": 2,
+        "grounded": 2,
+        "stock_ok": 2,
+        "latency_ms": [
+          2928
+        ],
+        "answer": "A sleek grey‑melange low‑top sneaker keeps the look relaxed yet polished, and a navy oversized scarf adds a soft pop of colour.",
+        "modes": [
+          "llm"
+        ],
+        "strategies": [
+          "pipeline"
+        ],
+        "tool_calls": 2,
+        "tool_errors": 0,
+        "model_requests": 1,
+        "tokens": 2473,
+        "repairs": 0
+      }
+    ],
+    "summary": {
+      "cases": 26,
+      "passed": 26,
+      "pass_rate": 100.0,
+      "items_shown": 63,
+      "grounded_rate": 100.0,
+      "stock_valid_rate": 100.0,
+      "no_result_rate": 26.9,
+      "turn_latency_p50_ms": 2118,
+      "turn_latency_p95_ms": 10149,
+      "model_answered_rate": 100.0,
+      "tool_calls": 57,
+      "tool_call_success_rate": 98.2,
+      "server_repairs": 0,
+      "tokens": 63865,
+      "by_group": {
+        "clarify": "1/1",
+        "image": "3/3",
+        "no-result": "3/3",
+        "occasion": "4/4",
+        "outfit": "3/3",
+        "personalisation": "2/2",
+        "refine": "3/3",
+        "search": "4/4",
+        "similar": "1/1",
+        "stock": "2/2"
+      }
+    }
+  }
+}

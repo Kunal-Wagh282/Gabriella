@@ -189,6 +189,8 @@ async def run_pipeline_turn(
             ctx.session, report, store=ctx.store, avoid=owned_product_ids(ctx.profile)
         )
         result.validation.setdefault("repairs", []).extend(notes)
+    if report.reasons_rewritten:
+        result.validation["reasons_rewritten"] = report.reasons_rewritten
     result.validation["strategy"] = "pipeline"
     result.validation["draft_items"] = sum(len(g.items) for g in draft.groups)
     return result

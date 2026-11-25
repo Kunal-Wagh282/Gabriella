@@ -5,6 +5,7 @@ never retrieved). `repair` is the last resort after retries: it swaps invalid it
 alternatives in the same slot, or drops them, so nothing invalid is ever displayed.
 """
 
+import re
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -18,6 +19,60 @@ from app.retrieval.similar import find_similar
 from app.schemas.catalogue import ProductFilters
 
 APPAREL_SLOTS = {"top", "bottom", "onepiece", "outerwear"}
+
+# Garment nouns a reason may open with, and the other words each category answers to. A reason
+# whose first garment noun doesn't fit its own product ("White sneakers keep it relaxed" under a
+# loafer) was written for a different item, usually one the model swapped out.
+CATEGORY_SYNONYMS: dict[str, set[str]] = {
+    "t-shirts": {"tee", "t-shirt"},
+    "knitwear": {"sweater", "jumper", "cardigan", "knit", "pullover"},
+    "hoodies-sweatshirts": {"hoodie", "sweatshirt"},
+    "jeans": {"jean", "denim"},
+    "trousers": {"trouser", "pant", "slack"},
+    "chinos": {"chino", "pant", "trouser"},
+    "joggers": {"jogger", "pant"},
+    "day-evening-dresses": {"dress", "gown"},
+    "formal-shoes": {"shoe", "oxford", "derby", "brogue"},
+    "loafers": {"loafer", "shoe", "moccasin"},
+    "sneakers": {"sneaker", "trainer", "shoe"},
+    "boots": {"boot", "shoe"},
+    "heels-flats": {"heel", "pump", "shoe"},
+    "sandals": {"sandal"},
+    "juttis-mojaris": {"jutti", "mojari", "shoe"},
+    "bags": {"bag", "tote", "handbag"},
+    "scarves-stoles": {"scarf", "stole"},
+    "churidars-palazzos": {"churidar", "palazzo", "pant"},
+}
+GARMENT_NOUNS = sorted(
+    {w for ws in CATEGORY_SYNONYMS.values() for w in ws}
+    | {"shirt", "polo", "blouse", "blazer", "jacket", "kurta", "skirt", "short", "belt", "cap"},
+    key=len,
+    reverse=True,  # longest first, so "t-shirt" wins over "shirt"
+)
+_NOUN = re.compile(r"\b(" + "|".join(map(re.escape, GARMENT_NOUNS)) + r")(?:e?s)?\b", re.I)
+
+
+def reason_fits(reason: str, product: Product) -> bool:
+    """True unless the reason opens by describing a different kind of garment."""
+    first = _NOUN.search(reason or "")
+    if first is None:
+        return True
+    noun = first.group(1).lower()
+    word = r"[a-z]+(?:-[a-z]+)*"
+    name = re.findall(word, product.name.lower())
+    # Name parts count too ("Cap-Toe Derbys" may be called a cap-toe), but not category parts:
+    # "T-Shirts" must not make every tee answer to "shirt".
+    parts = (
+        name
+        + [p for w in name if "-" in w for p in w.split("-")]
+        + re.findall(word, product.category.name.lower())
+    )
+    own = {w for word in parts for w in (word, word.removesuffix("s"), word.removesuffix("es"))}
+    return noun in own or noun in CATEGORY_SYNONYMS.get(product.category.slug, set())
+
+
+def factual_reason(product: Product) -> str:
+    return f"{product.colour} {product.material.lower()}, {product.fit.lower()} fit"
 
 
 @dataclass
@@ -33,6 +88,7 @@ class ValidationReport:
     problems: list[str] = field(default_factory=list)
     invalid: set[tuple[int, int]] = field(default_factory=set)  # (group index, item index)
     checked_items: int = 0
+    reasons_rewritten: int = 0
 
     @property
     def ok(self) -> bool:
@@ -176,6 +232,14 @@ async def validate(
                             f"groups[{gi}].items[{ii}] costs more than the ₹{budget:,} budget."
                         )
                         report.invalid.add((gi, ii))
+
+    # Reasons are shown under each card, so they must describe that card.
+    for group in rec.groups:
+        for item in group.items:
+            f = facts.get(item.product_id)
+            if f is not None and item.reason and not reason_fits(item.reason, f.product):
+                item.reason = factual_reason(f.product)
+                report.reasons_rewritten += 1
     return report
 
 

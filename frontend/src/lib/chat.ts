@@ -45,6 +45,22 @@ export interface ChatMessage {
   created_at: string | null;
   groups: ChatGroup[];
   follow_ups: string[];
+  /** Who wrote an assistant answer: the configured model, or the rule-based stylist. */
+  answered_by?: AnsweredBy | null;
+}
+
+export interface AnsweredBy {
+  kind: "model" | "rules";
+  model: string | null;
+  /** True when a model is configured but didn't answer (rate-limited, offline, unusable reply). */
+  fallback: boolean;
+}
+
+export function describeAnswer(by: AnsweredBy): string {
+  if (by.kind === "model" && by.model) return `Answered by ${describeModel(by.model)}`;
+  return by.fallback
+    ? "Answered by the rule-based stylist · the model was busy, so the same checks ran without it"
+    : "Answered by the rule-based stylist";
 }
 
 export interface Constraints {

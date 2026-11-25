@@ -272,6 +272,7 @@ async def run_turn(
     rec: Recommendation = result.recommendation
     chat.constraints = rec.constraints.model_dump(exclude_none=True)
     payload = rec.model_dump(exclude={"constraints"})
+    payload["answered_by"] = answered_by(backend, mode, result, error)
     message = ChatMessage(
         session_id=chat.id, role="assistant", content=rec.message, payload=payload
     )
@@ -311,6 +312,30 @@ async def run_turn(
         error=error,
     )
     return message
+
+
+def answered_by(
+    backend: ModelBackend | None, mode: str, result: TurnResult, error: str | None
+) -> dict[str, Any]:
+    """Who wrote this answer, shown under the message so the header's model name never overclaims.
+    `kind` is "model" or "rules"; `fallback` is true when a model is configured but didn't answer
+    (rate-limited, offline, or an unusable reply)."""
+    strategy = result.validation.get("strategy")
+    by_model = (
+        backend is not None
+        and mode == "llm"
+        and result.model_requests > 0
+        and strategy not in ("pipeline-draft", "pipeline-reset")
+    )
+    if by_model:
+        return {"kind": "model", "model": backend.name, "fallback": False}
+    return {
+        "kind": "rules",
+        "model": None,
+        "fallback": backend is not None
+        and strategy != "pipeline-reset"
+        and bool(error or mode == "fallback"),
+    }
 
 
 async def hydrate(db: AsyncSession, message: ChatMessage, store_id: int | None) -> dict[str, Any]:
@@ -363,4 +388,5 @@ async def hydrate(db: AsyncSession, message: ChatMessage, store_id: int | None) 
         "created_at": message.created_at.isoformat() if message.created_at else None,
         "groups": groups,
         "follow_ups": payload.get("follow_ups", []),
+        "answered_by": payload.get("answered_by") if message.role == "assistant" else None,
     }

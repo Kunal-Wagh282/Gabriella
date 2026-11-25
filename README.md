@@ -1,5 +1,11 @@
 # Gabriella
 
+[![CI](https://github.com/Kunal-Wagh282/Gabriella/actions/workflows/ci.yml/badge.svg)](https://github.com/Kunal-Wagh282/Gabriella/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+![Python 3.12](https://img.shields.io/badge/python-3.12-3776AB?logo=python&logoColor=white)
+![Next.js 16](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs)
+![Postgres + pgvector](https://img.shields.io/badge/Postgres-pgvector-4169E1?logo=postgresql&logoColor=white)
+
 **An AI fashion stylist that only recommends what's actually on the shelf.**
 
 Gabriella is a chat-based sales assistant for a simulated Indian multi-brand fashion retailer. Ask for "a casual dinner outfit under ₹6,000 in M and UK 9" and she builds a complete look. Every piece is a real catalogue product, in your size, in stock at your store, and within budget, and the server checks all of that before you see it. She also styles around a photo of your own clothes, learns from your past orders, and lets you buy the whole look in one click.
@@ -44,14 +50,14 @@ From the evaluation suite (`backend/evals`, details in [docs/evaluation.md](docs
 <!-- EVAL-RESULTS:START -->
 | | Groq · gpt-oss-120b | Rule-based (no model) |
 | --- | --- | --- |
-| Conversations passing all checks | 23 / 26 ¹ | 26 / 26 |
+| Conversations passing all checks | **26 / 26** | **26 / 26** |
 | Displayed items that exist, at the shown price | **100%** (63 items) | **100%** (74 items) |
 | Displayed items in stock in the shown size at the store | **100%** | **100%** |
-| Turns answered by the model (rest: rate-limited → rule-based) | 93% | – |
-| Turn latency p50 / p95 | 2.1 s / 8.7 s | 0.14 s / 0.32 s |
-| Tokens per turn | ≈ 2,000 | 0 |
+| Turns answered by the model itself | 100% | – |
+| Turn latency p50 / p95 | 2.1 s / 10.1 s | 0.14 s / 0.32 s |
+| Tokens per turn | ≈ 2,200 | 0 |
 
-¹ Two misses were over-literal checks ("out of stock" vs "sold out"), since relaxed to accept paraphrases. The third, ignoring "start fresh", is fixed: a reset now bypasses the model. A later run with Groq's daily token quota used up still passed **26/26**, because every rate-limited turn was answered by the rule-based stylist ([report](backend/evals/reports/llm-quota-exhausted.md)).
+Even with Groq's daily token quota used up, the suite still passes **26/26**: every rate-limited turn is answered by the rule-based stylist, under the same checks ([report](backend/evals/reports/llm-quota-exhausted.md)).
 
 | Retrieval and vision | |
 | --- | --- |
@@ -224,3 +230,7 @@ The simplest public deployment is the same Docker Compose stack on a small VM be
 - **Colour from photos** is the weakest signal (about 60% on colour family), especially light garments on light backgrounds. The chat shows the guess and its confidence, so a wrong read is visible.
 - **Free-tier limits:** Groq's free tier allows 8,000 tokens a minute and 200,000 a day for `gpt-oss-120b`. Pipeline mode keeps each turn to about 2,000 tokens, so that is roughly 80–100 model-answered turns a day. Beyond that, the rule-based stylist answers, with the same grounding guarantees.
 - **Payments are simulated.**
+
+## License
+
+[MIT](LICENSE). The catalogue, brands, stores and images are generated, so there is no third-party data to worry about.

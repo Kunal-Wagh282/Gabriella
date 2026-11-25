@@ -1,0 +1,66 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend (tests + lint)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: gabriella
+          POSTGRES_PASSWORD: gabriella
+          POSTGRES_DB: gabriella_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U gabriella"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      # Offline by design: hashing embedder instead of CLIP, scripted models instead of an LLM.
+      TEST_DATABASE_URL: postgresql+asyncpg://gabriella:gabriella@localhost:5432/gabriella_test
+      DATABASE_URL: postgresql+asyncpg://gabriella:gabriella@localhost:5432/gabriella_test
+      EMBEDDING_BACKEND: hashing
+      LLM_PROVIDER: none
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+      - run: uv sync --frozen
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+      - run: uv run pytest -q
+
+  frontend:
+    name: Frontend (lint + types + build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: frontend/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm exec tsc --noEmit
+      - run: pnpm build

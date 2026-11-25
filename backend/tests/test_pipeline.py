@@ -88,6 +88,7 @@ async def test_model_refines_the_draft_in_one_call(
     trace = (await session.scalars(select(AgentTrace))).one()
     assert trace.mode == "llm" and trace.model_requests == 1
     assert trace.validation["strategy"] == "pipeline"
+    assert message["answered_by"] == {"kind": "model", "model": backend.name, "fallback": False}
 
 
 async def test_rate_limited_model_still_gets_a_validated_answer(
@@ -111,6 +112,8 @@ async def test_rate_limited_model_still_gets_a_validated_answer(
     trace = (await session.scalars(select(AgentTrace))).one()
     assert trace.mode == "fallback" and "RateLimitError" in trace.error
     assert trace.validation["strategy"] == "pipeline-draft"
+    # The shopper is told the rule-based stylist answered, not the model in the header.
+    assert event["message"]["answered_by"] == {"kind": "rules", "model": None, "fallback": True}
 
 
 async def test_sizes_stay_enforced_when_the_model_drops_them(
@@ -190,6 +193,8 @@ async def test_start_fresh_skips_the_model(
     trace = (await session.scalars(select(AgentTrace))).one()
     assert trace.validation["strategy"] == "pipeline-reset"
     assert trace.model_requests == 0
+    assert event["message"]["answered_by"]["kind"] == "rules"
+    assert event["message"]["answered_by"]["fallback"] is False  # by design, not a failure
 
 
 def test_keeps_the_cheapest_look_figure_the_model_dropped():

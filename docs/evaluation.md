@@ -46,23 +46,25 @@ Each of the 26 cases (`evals/cases.py`) is a scripted conversation of one or two
 <!-- EVAL-TABLE:START -->
 | Metric | Groq · `openai/gpt-oss-120b` (pipeline mode) | Rule-based stylist |
 | --- | --- | --- |
-| Cases passed | 23 / 26 | 26 / 26 |
+| Cases passed | **26 / 26** | **26 / 26** |
 | Grounded items (exist, active, correct price) | 100% of 63 | 100% of 74 |
 | Stock-valid items (size in stock at the store) | 100% | 100% |
-| Turns answered by the model | 93.1% | – |
-| Tool-call success | 98.2% of 56 calls | – |
-| Turn latency p50 / p95 | 2,140 / 8,660 ms | 137 / 320 ms |
-| Tokens used (29 turns) | 58,523 (≈ 2,000 per turn) | 0 |
+| Turns answered by the model | 100% | – |
+| Tool-call success | 98.2% of 57 calls | – |
+| Turn latency p50 / p95 | 2,118 / 10,149 ms | 137 / 320 ms |
+| Tokens used (29 turns) | 63,865 (≈ 2,200 per turn) | 0 |
 
-The Groq run's three misses:
+**History.** The first Groq run passed 23/26:
 
 - `availability-sold-out` said "out of stock" and `off-topic` said "clothing". Both were correct answers failing over-literal phrase checks, which now accept paraphrases.
 - `start-fresh` was a real bug: the model kept the old context. A reset now bypasses the model.
 
-**Resilience run.** A re-run later the same day hit Groq's free-tier cap of **200,000 tokens per day** for this model after about a quarter of the turns. Every rate-limited turn was answered by the rule-based draft, and the suite still passed **26/26**, with 100% of 74 items grounded and in stock ([`llm-quota-exhausted.md`](../backend/evals/reports/llm-quota-exhausted.md)).
+The run above came after those fixes, plus the schema fix for `null` variant IDs and the reason check described below.
 
-To refresh the Groq column once the quota resets, run `uv run python -m evals.run --mode llm --only chat`. It needs about 60k tokens and 12 minutes at the default pacing.
-<!-- EVAL-TABLE:END --><!-- EVAL-TABLE:END -->
+**Resilience run.** A run made with Groq's free-tier cap of **200,000 tokens per day** already used up still passed **26/26**, with 100% of 74 items grounded and in stock. Every rate-limited turn was answered by the rule-based draft ([`llm-quota-exhausted.md`](../backend/evals/reports/llm-quota-exhausted.md)).
+
+To refresh these numbers, run `uv run python -m evals.run --mode llm --only chat`. It needs about 65k tokens and 12 minutes at the default pacing.
+<!-- EVAL-TABLE:END -->
 
 ### What the numbers mean
 
@@ -117,7 +119,8 @@ The first full run failed 5 of 26 cases. Each failure was a real bug, now fixed:
 | budget-impossible | When the budget emptied a whole slot, the reply was generic | Report the cheapest complete look ("comes to about ₹7,097") |
 | black-dress-sale | No black dress is on sale, so the answer was "nothing found" | Fall back to full-price matches and say so |
 
-The Groq runs surfaced two more:
+The Groq runs and the demo recording surfaced three more:
 
 - **The model ignored "start fresh"** and carried the old occasion forward. A reset now skips the model entirely (it is deterministic, and it saves a request).
+- **Stale reasons under swapped products.** The demo recording showed "white leather court sneakers…" as the reason under a pair of tassel loafers: the model had swapped the item but kept the old reason. The validator now checks that each reason describes its own product, and rewrites it from real attributes if not (tested against all 500 catalogue products).
 - **Groq rejected some answers before they reached the server.** Groq validates tool arguments against the JSON schema, and the model sent `"variant_id": null` for sizes it hadn't been given, while the schema said integer-only. Those turns silently fell back to the draft. The schema now allows `null`, and the server fills in the in-stock variant.
